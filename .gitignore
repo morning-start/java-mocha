@@ -10,3 +10,4 @@ wheels/
 .venv
 *.spec
 version_file.txt
+data/
