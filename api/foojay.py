@@ -53,7 +53,7 @@ class Foojay:
         self,
         version: str = None,
         distro_name: Distribution = None,
-        include_versions: bool = False,
+        include_versions: bool = True,
     ):
         if version is not None:
             url = urljoin(self.distributions, f"versions/{version}")
@@ -67,7 +67,7 @@ class Foojay:
         self,
         version: int = None,
         version_definition: VersionType = None,
-        include_versions: bool = False,
+        include_versions: bool = True,
     ):
         if version is not None:
             url = urljoin(self.distributions, f"versions/{version}/ga")
@@ -88,7 +88,7 @@ class Foojay:
         package_type: PkgType = "jdk",
         operating_system: list[OperatingSystem] = None,
         term_of_support: list[SupportTerm] = None,
-        include_versions: bool = False,
+        include_versions: bool = True,
         javafx_bundled=False,
         free_to_use_in_production=True,
     ):
