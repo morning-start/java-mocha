@@ -20,9 +20,9 @@ class Foojay:
     https://api.foojay.io/swagger-ui
     """
 
-    base_url = "https://api.foojay.io/disco/v3.0"
+    base_url = "https://api.foojay.io/disco/v3.0/"
     distributions = urljoin(base_url, "distributions")
-    versions = urljoin(base_url, "versions")
+    versions = urljoin(base_url, "major_versions")
     ids = urljoin(base_url, "ids")
     packages = urljoin(base_url, "packages")
 
@@ -32,7 +32,7 @@ class Foojay:
         }
         self.timeout = timeout
         self.verify = verify
-        self.proxies = {}
+        self.proxies = proxies
 
     def get(
         self,
@@ -47,13 +47,14 @@ class Foojay:
             timeout=self.timeout,
             verify=self.verify,
         )
-        return res.json().get("result")
+        return res.json().get("result", [])
 
     def search_distributions(
         self,
         version: str = None,
         distro_name: Distribution = None,
         include_versions: bool = True,
+        include_synonyms: bool = False,
     ):
         if version is not None:
             url = urljoin(self.distributions, f"versions/{version}")
@@ -61,20 +62,26 @@ class Foojay:
             url = urljoin(self.distributions, enum2val(distro_name))
         else:
             url = self.distributions
-        return self.get(url, params={"include_versions": include_versions})
+        return self.get(
+            url,
+            params={
+                "include_versions": include_versions,
+                "include_synonyms": include_synonyms,
+            },
+        )
 
     def search_versions(
         self,
         version: int = None,
         version_definition: VersionType = None,
-        include_versions: bool = True,
+        include_versions: bool = False,
     ):
         if version is not None:
-            url = urljoin(self.distributions, f"versions/{version}/ga")
+            url = urljoin(self.versions, f"versions/{version}/ga")
         elif version_definition is not None:
-            url = urljoin(self.distributions, f"{version_definition}")
+            url = urljoin(self.versions, f"{version_definition}")
         else:
-            url = self.distributions
+            url = self.versions
         return self.get(url, params={"include_versions": include_versions})
 
     def search_packages(
@@ -83,13 +90,13 @@ class Foojay:
         version_by_definition: PackVersion = None,
         jdk_version: int = None,
         distribution: list[Distribution] = None,
-        architecture: list[Architecture] = None,
+        architecture: Architecture = None,
+        operating_system: OperatingSystem = None,
         archive_type: list[ArchiveType] = None,
         package_type: PkgType = "jdk",
-        operating_system: list[OperatingSystem] = None,
         term_of_support: list[SupportTerm] = None,
         include_versions: bool = True,
-        javafx_bundled=False,
+        javafx_bundled: bool = None,
         free_to_use_in_production=True,
     ):
         """
@@ -119,7 +126,7 @@ class Foojay:
         include_versions : bool, optional
             是否包含所有可用版本，默认为 False。
         javafx_bundled : bool, optional
-            如果为 True，则返回包含 JavaFX 的包，默认为 False。
+            如果为 True，则返回包含 JavaFX 的包，默认为 None
         free_to_use_in_production : bool, optional
             如果为 True，表示该包可免费用于生产环境，默认为 True。
 

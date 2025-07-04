@@ -1,9 +1,11 @@
 from enum import Enum
 from typing import Literal
 
+from utils.sys_utils import get_sys_arch, get_sys_os
 
-def enum2val(enum_list: list[Enum] | Enum):
-    if isinstance(enum_list, list[Enum]):
+
+def enum2val(enum_list: list[Enum] | Enum) -> list[str] | str:
+    if isinstance(enum_list, list):
         return [enum.value for enum in enum_list]
     if isinstance(enum_list, Enum):
         return enum_list.value
@@ -26,14 +28,56 @@ class SupportTerm(Enum):
 
 
 class OperatingSystem(Enum):
-    AIX = "aix"
-    ALPINE_LINUX = "alpine_linux"
-    LINUX = "linux"
-    LINUX_MUSL = "linux_musl"
-    MACOS = "macos"
-    QNX = "qnx"
-    SOLARIS = "solaris"
-    WINDOWS = "windows"
+    AIX = ["aix"]
+    LINUX = ["linux", "alpine_linux", "linux_musl"]
+    MACOS = ["macos"]
+    QNX = ["qnx"]
+    SOLARIS = ["solaris"]
+    WINDOWS = ["windows"]
+
+    @classmethod
+    def get_local_os(cls) -> "OperatingSystem":
+        sys_os = get_sys_os()
+        # 建立别名到枚举的映射
+        alias_map = {}
+        for arch_enum in cls:
+            for alias in arch_enum.value:
+                alias_map[alias] = arch_enum
+        canonical = alias_map.get(sys_os)
+        if canonical is None:
+            raise ValueError(f"Unsupported System: {sys_os}")
+        return canonical
+
+
+class Architecture(Enum):
+    ARM32 = ["aarch32", "arm32", "arm"]
+    ARM64 = ["aarch64", "arm64"]
+    AMD64 = ["amd64", "x64", "x86-64"]
+    I386 = ["i386", "x86", "x86-32", "i486", "i586", "i686"]
+    MIPS = ["mips"]
+    PPC = ["ppc"]
+    PPC64 = ["ppc64", "ppc64le", "ppc64el"]
+    RISCV64 = ["riscv64"]
+    S390 = ["s390"]
+    S390X = ["s390x"]
+    SPARC = ["sparc"]
+    SPARCV9 = ["sparcv9"]
+
+    @classmethod
+    def get_local_architecture(cls) -> "Architecture":
+        """根据当前系统架构返回对应的 Architecture 枚举值"""
+        sys_arch = get_sys_arch()
+
+        # 建立别名到枚举的映射
+        alias_map = {}
+        for arch_enum in cls:
+            for alias in arch_enum.value:
+                alias_map[alias] = arch_enum
+
+        canonical = alias_map.get(sys_arch)
+        if canonical is None:
+            raise ValueError(f"Unsupported architecture: {sys_arch}")
+        return canonical
 
 
 class ArchiveType(Enum):
@@ -49,33 +93,6 @@ class ArchiveType(Enum):
     TAR_GZ = "tar.gz"
     TGZ = "tgz"
     ZIP = "zip"
-
-
-class Architecture(Enum):
-    AARCH32 = "aarch32"
-    AARCH64 = "aarch64"
-    AMD64 = "amd64"
-    ARM = "arm"
-    ARM32 = "arm32"
-    ARM64 = "arm64"
-    MIPS = "mips"
-    PPC = "ppc"
-    PPC64EL = "ppc64el"
-    PPC64LE = "ppc64le"
-    PPC64 = "ppc64"
-    RISCV64 = "riscv64"
-    S390 = "s390"
-    S390X = "s390x"
-    SPARC = "sparc"
-    SPARCV9 = "sparcv9"
-    X64 = "x64"
-    X86_64 = "x86-64"
-    X86 = "x86"
-    I386 = "i386"
-    I486 = "i486"
-    I586 = "i586"
-    I686 = "i686"
-    X86_32 = "x86-32"
 
 
 class Distribution(Enum):
