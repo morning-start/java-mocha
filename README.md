@@ -1,0 +1,15 @@
+- init
+    - jdk_dir
+- sync,s
+- list,ls
+- list-remote,lsr
+    - publisher
+    - version
+    - term_of_support
+    - archive_type
+    - javafx_bundled
+    - all
+- install,i
+- use
+- uninstall/remove,rm
+- config
