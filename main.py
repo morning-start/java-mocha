@@ -11,26 +11,33 @@ from utils.file_utils import load_json, mk_sure, save_json
 from utils.json_handler import JSONDataHandler
 
 app = typer.Typer(
-    no_args_is_help=True,
-    short_help="Java Mocha 是一个 Java 版本管理工具，基于 Foojay 提供的 API 进行开发。",
-    help="Java Mocha 是一个 Java 版本管理工具，基于 Foojay 提供的 API 进行开发。可以通过命令行工具进行版本管理，也可以通过 API 进行集成。",
+    short_help="Java Mocha is a Java version management tool developed based on the Foojay API.",
+    help="Java Mocha is a Java version management tool developed based on the Foojay API. It can be used for version management via the command-line interface or integrated through the API.",
 )
 
 
-@app.command(help="配置 Java Mocha 的 JVM 根目录、JDK 目录和缓存目录。")
+@app.command(
+    help="Configure the JVM root directory, JDK directory, and cache directory for Java Mocha."
+)
 def config(
     jvm_root: Annotated[
         Path,
-        typer.Argument(help="JVM 根目录，默认为用户主目录下的 `.java-mocha` 目录。"),
+        typer.Argument(
+            help="JVM root directory, default is the `.java-mocha` directory under the user's home directory."
+        ),
     ] = Path.home()
     / ".java-mocha",
     jdk_home: Annotated[
         Optional[Path],
-        typer.Option(help="JDK 目录，默认为 JVM 根目录下的 `jdk` 目录。"),
+        typer.Option(
+            help="JDK directory, default is the `jdk` directory under the JVM root directory."
+        ),
     ] = None,
     cache_home: Annotated[
         Optional[Path],
-        typer.Option(help="缓存目录，默认为 JVM 根目录下的 `cache` 目录。"),
+        typer.Option(
+            help="Cache directory, default is the `cache` directory under the JVM root directory."
+        ),
     ] = None,
 ):
     """
@@ -46,7 +53,7 @@ def config(
         缓存目录，默认为 JVM 根目录下的 `cache` 目录。
 
     """
-    # 初始化配置文件
+    # Initialize the configuration file
     config_file = Path.home() / ".java-mocha" / "config.json"
     if config_file.exists():
         cfg = load_json(config_file)
@@ -68,7 +75,9 @@ def config(
     save_json(config_file, cfg)
 
 
-@app.command(help="同步 Foojay 的发行版、软件包和版本数据到本地 JSON 文件。")
+@app.command(
+    help="Sync the distribution, package, and version data from Foojay to local JSON files."
+)
 def sync():
     data = mk_sure("data")
     foojay = Foojay()
@@ -86,6 +95,11 @@ def sync():
 
     versions = foojay.search_versions()
     save_json(data / "versions.json", versions)
+
+
+@app.command(help="List all available versions")
+def list_remote():
+    pass
 
 
 if __name__ == "__main__":
