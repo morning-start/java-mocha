@@ -1,5 +1,4 @@
-from rich.console import Console, JustifyMethod, OverflowMethod
-from rich.style import Style
+from rich.console import Console
 from rich.theme import Theme
 
 custom_theme = Theme(

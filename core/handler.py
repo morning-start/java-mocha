@@ -1,10 +1,12 @@
-from typing import Any, Callable, Dict, List, Literal, Optional
+from typing import Callable, Dict, List, Literal, Optional
 
 from rich.table import Table
 
 from .utils import load_json
 
-JSONType = List[Dict[str, str | int | bool]]
+EleType = str | int | bool
+ItemType = Dict[str, EleType]
+JSONType = List[ItemType]
 
 
 def show_table(data: JSONType):
@@ -41,7 +43,7 @@ class JSONDataHandler:
         doc = load_json(file_name=file_path)
         return cls(doc)
 
-    def query(self, key: Optional[str] = None, value: Optional[Any] = None):
+    def query(self, key: Optional[str] = None, value: Optional[EleType] = None):
         """
         基础查询功能，展示所有符合条件的数据
         """
@@ -51,7 +53,52 @@ class JSONDataHandler:
             [item for item in self.document if item.get(key) == value]
         )
 
-    def filter(self, condition: Callable[[Dict[str, Any]], bool]):
+    def rename(self, name_map: dict):
+        """
+        重命名字段
+        """
+        for item in self.document:
+            for old_name, new_name in name_map.items():
+                if old_name in item:
+                    item[new_name] = item.pop(old_name)
+        return self
+
+    def orderby(self, levels: list[str]):
+        # self.document 是一个list，其中每一dict为Item
+        # 每个item的字段，按照levles排序
+        new_doc = []
+        for item in self.document:
+            new_item = {}
+            for level in levels:
+                if level in item:
+                    new_item[level] = item[level]
+            new_doc.append(new_item)
+        self.document = new_doc
+        return self
+
+    def sort(self, key: str, reverse: bool = False):
+        """
+        排序功能
+        """
+        self.document.sort(key=lambda x: x[key], reverse=reverse)
+        return self
+
+    def map(self, func: Callable[[ItemType], ItemType]):
+        """
+        对每个Item应用函数
+        """
+        self.document = [func(item) for item in self.document]
+        return self
+
+    def apply(self, key: str, func: Callable[[EleType], EleType]):
+        """
+        对指定ele应用函数
+        """
+        for item in self.document:
+            item[key] = func(item[key])
+        return self
+
+    def filter(self, condition: Callable[[ItemType], bool]):
         """过滤功能"""
         return JSONDataHandler([item for item in self.document if condition(item)])
 

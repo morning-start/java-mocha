@@ -1,19 +1,14 @@
 import os
 from pathlib import Path
-from tkinter import NO
 from typing import Optional
 
 import typer
-from click.core import F
-from rich.console import Console
 from typing_extensions import Annotated
 
-from core import Foojay, JSONDataHandler, log
+from core import log
 from core.handler import show_table
-from core.type import Architecture, Distribution, OperatingSystem, SupportTerm, enum2val
-from core.utils import load_json, mk_sure, save_json
 from func.config import Config, init_config
-from func.list import list_local_jdk, list_publisher, list_version
+from func.list import list_local_jdk, list_publish_version, list_publisher, list_version
 from func.sync import sync_data
 
 app = typer.Typer(
@@ -62,9 +57,7 @@ def config(
     log.info("Config saved successfully.")
 
 
-@app.command(
-    help="Sync the distribution, package, and version data from Foojay to local JSON files."
-)
+@app.command(help="Sync the Foojay JDK data to local JSON files.")
 def sync():
     jvm_root = load_jvm()
     cfg = Config.load(jvm_root)
@@ -75,7 +68,7 @@ def sync():
     sync_data(jvm_root, proxies)
 
 
-@app.command(help="list infos for jdk, publisher, version")
+@app.command(help="list infos for local jdk, all publisher, all version")
 def list(
     publisher: Annotated[
         bool, typer.Option(..., "--publisher", "-p", help="Publisher name")
@@ -96,6 +89,11 @@ def list(
             # TODO  格式化输出，正在使用，排序
             log.info(*jdks, sep="\n")
     # version 为 True 时，列出所有major发行版
+    elif publisher and version:
+        data = list_publish_version(cfg.data_dir)
+        table = show_table(data)
+        log.info(table)
+
     elif version:
         version_data = list_version(cfg.data_dir)
         table = show_table(version_data)
@@ -105,9 +103,6 @@ def list(
         publisher_data = list_publisher(cfg.data_dir)
         table = show_table(publisher_data)
         log.info(table)
-    else:
-        # typer处理错误，输入不符合规范
-        log.error("input is not supported, please use --help to view usage")
 
 
 @app.command(help="Query available JDKs")
@@ -121,6 +116,43 @@ def query(
     ] = False,
 ):
 
+    pass
+
+
+@app.command(help="Install JDKs")
+def install(
+    jdk: Annotated[
+        str,
+        typer.Option(
+            ...,
+            "--jdk",
+            "-j",
+            help="The JDK version format as publisher@version e.g. oracle@11",
+        ),
+    ],
+    force: Annotated[
+        bool,
+        typer.Option(..., "--force", "-f", help="Force install"),
+    ] = False,
+):
+    pass
+
+
+@app.command(
+    help="Switch JAVA_HOME environment variable.",
+    epilog="Before using, please view local jdk version via `jvm list` command. ",
+)
+def use(
+    jdk: Annotated[
+        str,
+        typer.Option(
+            ...,
+            "--jdk",
+            "-j",
+            help="The JDK version format as publisher@version e.g. oracle@11",
+        ),
+    ],
+):
     pass
 
 

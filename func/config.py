@@ -1,5 +1,4 @@
 from pathlib import Path
-from tkinter import NO
 from typing import NamedTuple
 
 from core.utils import load_json, save_json

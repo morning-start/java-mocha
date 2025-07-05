@@ -1,15 +1,8 @@
-import json
-import platform
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import List
 
-import typer
-from typing_extensions import Annotated
-
-from core import Foojay, JSONDataHandler
-from core.handler import JSONType
-from core.type import Architecture, Distribution, OperatingSystem, SupportTerm, enum2val
-from core.utils import load_json, mk_sure, save_json
+from core import JSONDataHandler
+from core.handler import ItemType, JSONType, get_version_part
 
 
 def list_local_jdk(jdk_home: Path):
@@ -34,19 +27,27 @@ def list_publisher(data_dir: Path):
         "build_of_graalvm",
         "official_uri",
     ]
-    publisher = handler.get_specific_fields(fields).document
-    # 将  "build_of_openjdk",build_of_graalvm", 合并为  key为build，值为 openjdk或graalvm
-    new_publisher: JSONType = []
-    for item in publisher:
-        build_type = "openjdk" if item["build_of_openjdk"] else "graalvm"
-        new_publisher.append(
-            {
-                "name": item["api_parameter"],
-                "build": build_type,
-                "official_uri": item["official_uri"],
-            }
-        )
-    return new_publisher
+    publisher = handler.get_specific_fields(fields)
+
+    def _assemble_build(item: ItemType):
+        open_flag = item.pop("build_of_openjdk")
+        lvm_flag = item.pop("build_of_graalvm")
+        build_type = ""
+        if open_flag and lvm_flag:
+            build_type = "openjdk+graalvm"
+        elif open_flag:
+            build_type = "openjdk"
+        elif lvm_flag:
+            build_type = "graalvm"
+        else:
+            build_type = "unknown"
+        item["build"] = build_type
+        return item
+
+    publisher.map(_assemble_build)
+    publisher.rename({"api_parameter": "name"})
+    publisher.orderby(["name", "build", "official_uri"])
+    return publisher.document
 
 
 def list_version(data_dir: Path) -> JSONType:
@@ -65,3 +66,19 @@ def list_version(data_dir: Path) -> JSONType:
     #     item["version"] = item.pop("major_version")
     #     item["support_term"] = item.pop("term_of_support")
     return version
+
+
+def list_publish_version(data_dir: Path):
+    def _refine_major_versions(versions: List[str]):
+        major_version = (get_version_part(version) for version in versions)
+        return list(set(major_version))
+
+    handler = JSONDataHandler.load_data(data_dir / "distributions.json")
+    fields = [
+        "api_parameter",
+        "versions",
+    ]
+    data = handler.get_specific_fields(fields)
+    data.apply("versions", _refine_major_versions)
+    data.rename({"api_parameter": "name", "versions": "major_version"})
+    return data.document
