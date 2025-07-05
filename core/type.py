@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Literal
 
-from utils.sys_utils import get_sys_arch, get_sys_os
+from .utils import get_sys_arch, get_sys_os
 
 
 def enum2val(enum_list: list[Enum] | Enum) -> list[str] | str:

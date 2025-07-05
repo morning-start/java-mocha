@@ -1,6 +1,19 @@
 from typing import Any, Callable, Dict, List, Literal, Optional
 
-from .file_utils import load_json
+from rich.table import Table
+
+from .utils import load_json
+
+JSONType = List[Dict[str, str | int | bool]]
+
+
+def show_table(data: JSONType):
+    table = Table()
+    for key in data[0].keys():
+        table.add_column(key)
+    for item in data:
+        table.add_row(*[str(item[key]) for key in item.keys()])
+    return table
 
 
 def get_version_part(
@@ -19,14 +32,14 @@ def get_version_part(
 
 
 class JSONDataHandler:
-    def __init__(self, data: list):
-        self.data = data
+    def __init__(self, doc: JSONType):
+        self.document = doc
 
     @classmethod
     def load_data(cls, file_path: str):
         """加载 JSON 文件数据"""
-        data = load_json(file_name=file_path)
-        return cls(data)
+        doc = load_json(file_name=file_path)
+        return cls(doc)
 
     def query(self, key: Optional[str] = None, value: Optional[Any] = None):
         """
@@ -34,16 +47,18 @@ class JSONDataHandler:
         """
         if key is None or value is None:
             return self
-        return JSONDataHandler([item for item in self.data if item.get(key) == value])
+        return JSONDataHandler(
+            [item for item in self.document if item.get(key) == value]
+        )
 
     def filter(self, condition: Callable[[Dict[str, Any]], bool]):
         """过滤功能"""
-        return JSONDataHandler([item for item in self.data if condition(item)])
+        return JSONDataHandler([item for item in self.document if condition(item)])
 
     def group_by(self, key: str):
         """分组汇总功能"""
         grouped_data = {}
-        for item in self.data:
+        for item in self.document:
             group_key = item.get(key)
             if group_key not in grouped_data:
                 grouped_data[group_key] = []
@@ -56,7 +71,7 @@ class JSONDataHandler:
         """
 
         result = []
-        for item in self.data:
+        for item in self.document:
             new_item = {k: v for k, v in item.items() if k in fields}
             result.append(new_item)
         return JSONDataHandler(result)
