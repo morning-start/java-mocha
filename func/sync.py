@@ -7,9 +7,9 @@ from core.type import Architecture, OperatingSystem
 from core.utils import save_json
 
 
-def sync_data(jvm_root: Path):
+def sync_data(jvm_root: Path, proxies: dict = None):
     data_path = jvm_root / "data"
-    foojay = Foojay()
+    foojay = Foojay(proxies)
     with Progress(
         SpinnerColumn(),
         TextColumn("[progress.description]{task.description}"),

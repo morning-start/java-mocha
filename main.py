@@ -62,7 +62,13 @@ def config(
 )
 def sync():
     jvm_root = load_jvm()
-    sync_data(jvm_root)
+    cfg = load_config(jvm_root)
+    proxy: str = cfg.get("proxy")
+    proxies = None
+    if proxy:
+        log.info(f"Syncing data from Foojay with proxy {proxy}")
+        proxies = {"https": proxy, "http": proxy}
+    sync_data(jvm_root, proxies)
 
 
 @app.command(help="list infos for jdk, publisher, version")
