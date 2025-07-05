@@ -6,15 +6,14 @@ import typer
 from rich.console import Console
 from typing_extensions import Annotated
 
-from core import Foojay, JSONDataHandler
+from core import Foojay, JSONDataHandler, log
 from core.handler import show_table
 from core.type import Architecture, Distribution, OperatingSystem, SupportTerm, enum2val
 from core.utils import load_json, mk_sure, save_json
-from func.config import init_config, set_config
-from func.list import list_publisher
+from func.config import init_config, load_config, set_config
+from func.list import list_local_jdk, list_publisher
 from func.sync import sync_data
 
-console = Console()
 app = typer.Typer(
     no_args_is_help=True,
     add_completion=False,
@@ -72,21 +71,26 @@ def list(
     version: Annotated[bool, typer.Option(help="Version flag")] = False,
 ):
     jvm_root = load_jvm()
+    cfg = load_config(jvm_root)
     # 都为 False 时，列出本地jdk信息 publisher@version
     if not publisher and not version:
-        pass
+        jdks = list_local_jdk(cfg.get("jdk_home"))
+        if not jdks:
+            log.warning("No JDK found, please install first.")
+        else:
+            log.info(jdks, sep="\n")
     # version 为 True 时，列出所有major发行版
     elif version:
         pass
     # publisher 为 True 时，列出所有发行商
     elif publisher:
-        publisher_data = list_publisher(jvm_root)
+        publisher_data = list_publisher(cfg.get("data_dir"))
         table = show_table(publisher_data)
-        console.print(table)
+        log.info(table)
 
     else:
         # typer处理错误，输入不符合规范
-        typer.secho("input is not supported", err=True)
+        log.error("input is not supported")
 
 
 @app.command(help="Query available JDKs")

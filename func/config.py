@@ -3,12 +3,16 @@ from pathlib import Path
 from core.utils import load_json, save_json
 
 
-def load_config(jvm_root: Path):
+def load_config(jvm_root: Path) -> dict:
     """
     加载配置文件
     """
     config_file = jvm_root / "config.json"
-    return load_json(config_file)
+    cfg = load_json(config_file)
+    for key in cfg:
+        if key != "proxy":
+            cfg[key] = Path(cfg[key])
+    return cfg
 
 
 def init_config(jvm_root: Path, jdk_home: Path, cache_home: Path):
@@ -27,15 +31,17 @@ def init_config(jvm_root: Path, jdk_home: Path, cache_home: Path):
     config_file = jvm_root / "config.json"
     jdk_home = jvm_root / "jdk" if jdk_home is None else jdk_home
     cache_home = jvm_root / "cache" if cache_home is None else cache_home
+    data_dir = jvm_root / "data"
     cfg = {
         "jvm_root": str(jvm_root),
         "jdk_home": str(jdk_home),
         "cache_home": str(cache_home),
+        "data_dir": str(data_dir),
     }
     jvm_root.mkdir(parents=True, exist_ok=True)
     jdk_home.mkdir(parents=True, exist_ok=True)
     cache_home.mkdir(parents=True, exist_ok=True)
-    (jvm_root / "data").mkdir(parents=True, exist_ok=True)
+    data_dir.mkdir(parents=True, exist_ok=True)
 
     save_json(config_file, cfg)
 

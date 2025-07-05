@@ -23,11 +23,10 @@ def list_local_jdk(jdk_home: Path):
     return local_jdks
 
 
-def list_publisher(jvm: Path):
+def list_publisher(data_dir: Path):
     """
     获取发行版的 name、build_of_openjdk、build_of_graalvm、official_uri 和 versions 信息，versions 只显示 major 级别
     """
-    data_dir = jvm / "data"
     handler = JSONDataHandler.load_data(data_dir / "distributions.json")
     fields = [
         "name",

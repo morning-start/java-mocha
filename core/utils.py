@@ -16,7 +16,7 @@ def save_json(file_name, json_data):
         json.dump(json_data, f, indent=4)
 
 
-def load_json(file_name) -> list:
+def load_json(file_name) -> list | dict:
     return json.load(open(file_name, encoding="utf-8"))
 
 
