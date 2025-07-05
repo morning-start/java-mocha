@@ -1,15 +1,25 @@
 - init
     - jdk_dir
-- sync,s
+- sync
 - list,ls
-- list-remote,lsr
+    - publisher
+    - version
+- query,q
     - publisher
     - version
     - term_of_support
     - archive_type
     - javafx_bundled
-    - all
 - install,i
 - use
 - uninstall/remove,rm
 - config
+
+
+
+文件夹结构
+
+.java-mocha
+    - jdk
+    - cache
+    - config.json
