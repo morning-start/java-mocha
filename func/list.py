@@ -16,7 +16,7 @@ def list_local_jdk(jdk_home: Path):
     # 展示本地jdk
     if not jdk_home.exists():
         return []
-    local_jdks = []
+    local_jdks: list[str] = []
     for item in jdk_home.iterdir():
         if item.is_dir():
             local_jdks.append(item.name)
@@ -47,3 +47,21 @@ def list_publisher(data_dir: Path):
             }
         )
     return new_publisher
+
+
+def list_version(data_dir: Path) -> JSONType:
+    """
+    获取版本的 name、version、release_date、support_term、download_uri、download_size、download_hash 信息
+    """
+    handler = JSONDataHandler.load_data(data_dir / "versions.json")
+    fields = [
+        "major_version",
+        "term_of_support",
+        "maintained",
+    ]
+    version = handler.get_specific_fields(fields).document
+    # # 对每个进行改名
+    # for item in version:
+    #     item["version"] = item.pop("major_version")
+    #     item["support_term"] = item.pop("term_of_support")
+    return version

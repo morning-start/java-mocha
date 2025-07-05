@@ -10,15 +10,18 @@ from core import Foojay, JSONDataHandler, log
 from core.handler import show_table
 from core.type import Architecture, Distribution, OperatingSystem, SupportTerm, enum2val
 from core.utils import load_json, mk_sure, save_json
-from func.config import init_config, load_config, set_config
-from func.list import list_local_jdk, list_publisher
+from func.config import Config, init_config
+from func.list import list_local_jdk, list_publisher, list_version
 from func.sync import sync_data
 
 app = typer.Typer(
     no_args_is_help=True,
     add_completion=False,
     short_help="Java Mocha is a Java version management tool developed based on the Foojay API.",
-    help="Java Mocha is a Java version management tool developed based on the Foojay API. It can be used for version management via the command-line interface or integrated through the API.",
+    help="""Java Mocha is a Java version management tool developed based on the Foojay API.
+It can be used for version management via the command-line interface or integrated through the API.""",
+    epilog="""Before using, 1. please first initialize the configuration with `jvm config`,
+2. then sync the data with `jvm sync`. 3. Use `--help` to view specific command usage.""",
 )
 
 
@@ -53,8 +56,8 @@ def config(
     ] = None,
 ):
     jvm_root = load_jvm()
-    init_config(jvm_root, jdk_home, cache_home)
-    set_config(jvm_root, "proxy", proxy)
+    init_config(jvm_root, jdk_home, cache_home, proxy)
+    log.info("Config saved successfully.")
 
 
 @app.command(
@@ -62,35 +65,42 @@ def config(
 )
 def sync():
     jvm_root = load_jvm()
-    cfg = load_config(jvm_root)
-    proxy: str = cfg.get("proxy")
+    cfg = Config.load(jvm_root)
     proxies = None
-    if proxy:
-        log.info(f"Syncing data from Foojay with proxy {proxy}")
-        proxies = {"https": proxy, "http": proxy}
+    if cfg.proxy:
+        log.info(f"Syncing data from Foojay with proxy {cfg.proxy}")
+        proxies = {"https": cfg.proxy, "http": cfg.proxy}
     sync_data(jvm_root, proxies)
 
 
 @app.command(help="list infos for jdk, publisher, version")
 def list(
-    publisher: Annotated[bool, typer.Option(help="Publisher name")] = False,
-    version: Annotated[bool, typer.Option(help="Version flag")] = False,
+    publisher: Annotated[
+        bool, typer.Option(..., "--publisher", "-p", help="Publisher name")
+    ] = False,
+    version: Annotated[
+        bool, typer.Option(..., "--version", "-v", help="Version flag")
+    ] = False,
 ):
     jvm_root = load_jvm()
-    cfg = load_config(jvm_root)
+    cfg = Config.load(jvm_root)
     # 都为 False 时，列出本地jdk信息 publisher@version
     if not publisher and not version:
-        jdks = list_local_jdk(cfg.get("jdk_home"))
+        jdks = list_local_jdk(cfg.jdk_home)
+        jdks = ["a", "b", "c"]
         if not jdks:
             log.warning("No JDK found, please install first.")
         else:
-            log.info(jdks, sep="\n")
+            # TODO  格式化输出，正在使用，排序
+            log.info(*jdks, sep="\n")
     # version 为 True 时，列出所有major发行版
     elif version:
-        pass
+        version_data = list_version(cfg.data_dir)
+        table = show_table(version_data)
+        log.info(table)
     # publisher 为 True 时，列出所有发行商
     elif publisher:
-        publisher_data = list_publisher(cfg.get("data_dir"))
+        publisher_data = list_publisher(cfg.data_dir)
         table = show_table(publisher_data)
         log.info(table)
 
