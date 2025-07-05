@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import Optional
 
@@ -22,18 +23,15 @@ app = typer.Typer(
 )
 
 
-@app.command(
-    help="Configure the JVM root directory, JDK directory, and cache directory for Java Mocha."
-)
+def load_jvm() -> Path:
+    jvm_root = Path.home() / ".java-mocha"
+    if "JVM_ROOT" in os.environ:
+        jvm_root = Path(os.environ["JVM_ROOT"])
+    return jvm_root
+
+
+@app.command(help="Configure the JDK directory, and cache directory for Java Mocha.")
 def config(
-    jvm_root: Annotated[
-        Path,
-        typer.Argument(
-            envvar="JVM_ROOT",
-            help="JVM root directory, default is the `.java-mocha` directory under the user's home directory.",
-        ),
-    ] = Path.home()
-    / ".java-mocha",
     jdk_home: Annotated[
         Optional[Path],
         typer.Option(
@@ -55,6 +53,7 @@ def config(
         ),
     ] = None,
 ):
+    jvm_root = load_jvm()
     init_config(jvm_root, jdk_home, cache_home)
     set_config(jvm_root, "proxy", proxy)
 
@@ -63,8 +62,8 @@ def config(
     help="Sync the distribution, package, and version data from Foojay to local JSON files."
 )
 def sync():
-    data = mk_sure("data")
-    sync_data(data)
+    jvm_root = load_jvm()
+    sync_data(jvm_root)
 
 
 @app.command(help="list infos for jdk, publisher, version")
@@ -72,7 +71,7 @@ def list(
     publisher: Annotated[bool, typer.Option(help="Publisher name")] = False,
     version: Annotated[bool, typer.Option(help="Version flag")] = False,
 ):
-    data = Path("data")
+    jvm_root = load_jvm()
     # 都为 False 时，列出本地jdk信息 publisher@version
     if not publisher and not version:
         pass
@@ -81,7 +80,7 @@ def list(
         pass
     # publisher 为 True 时，列出所有发行商
     elif publisher:
-        publisher_data = list_publisher(data)
+        publisher_data = list_publisher(jvm_root)
         table = show_table(publisher_data)
         console.print(table)
 

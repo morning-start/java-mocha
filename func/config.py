@@ -3,6 +3,14 @@ from pathlib import Path
 from core.utils import load_json, save_json
 
 
+def load_config(jvm_root: Path):
+    """
+    加载配置文件
+    """
+    config_file = jvm_root / "config.json"
+    return load_json(config_file)
+
+
 def init_config(jvm_root: Path, jdk_home: Path, cache_home: Path):
     """
     配置 Java Mocha 的 JVM 根目录、JDK 目录和缓存目录。
@@ -27,6 +35,7 @@ def init_config(jvm_root: Path, jdk_home: Path, cache_home: Path):
     jvm_root.mkdir(parents=True, exist_ok=True)
     jdk_home.mkdir(parents=True, exist_ok=True)
     cache_home.mkdir(parents=True, exist_ok=True)
+    (jvm_root / "data").mkdir(parents=True, exist_ok=True)
 
     save_json(config_file, cfg)
 

@@ -1,5 +1,4 @@
-- init
-    - jdk_dir
+- config
 - sync
 - list,ls
     - publisher
@@ -13,13 +12,14 @@
 - install,i
 - use
 - uninstall/remove,rm
-- config
 
 
 
 文件夹结构
 
-.java-mocha
-    - jdk
-    - cache
+.java-mocha jdk_root
+    - current 软连接 JAVA_HOME
+    - jdk jdk_home
+        - publisher@version
+    - cache cache_dir
     - config.json

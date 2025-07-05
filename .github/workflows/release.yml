@@ -47,7 +47,7 @@ jobs:
       
     - name: Install UV
       run: |
-        powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+        curl -LsSf https://astral.sh/uv/install.sh | sh
 
         
     - name: Sync dependencies with UV
@@ -72,8 +72,13 @@ jobs:
       uses: actions/checkout@v3
     - name: Install UV
       run: |
-        curl -sS https://uv.astral.sh | bash
+        curl -LsSf https://astral.sh/uv/install.sh | sh
     - name: Sync dependencies with UV
       run: uv sync
-
+    - name: Build the project
+      run: uv run build.py
+    - name: Create Release
+      uses: ncipollo/release-action@v1.18.0
+      with:
+          artifacts: ./dist/*
     

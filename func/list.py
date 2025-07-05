@@ -12,11 +12,23 @@ from core.type import Architecture, Distribution, OperatingSystem, SupportTerm, 
 from core.utils import load_json, mk_sure, save_json
 
 
-def list_publisher(dir_path: Path):
+def list_local_jdk(jdk_home: Path):
+    # 展示本地jdk
+    if not jdk_home.exists():
+        return []
+    local_jdks = []
+    for item in jdk_home.iterdir():
+        if item.is_dir():
+            local_jdks.append(item.name)
+    return local_jdks
+
+
+def list_publisher(jvm: Path):
     """
     获取发行版的 name、build_of_openjdk、build_of_graalvm、official_uri 和 versions 信息，versions 只显示 major 级别
     """
-    handler = JSONDataHandler.load_data(dir_path / "distributions.json")
+    data_dir = jvm / "data"
+    handler = JSONDataHandler.load_data(data_dir / "distributions.json")
     fields = [
         "name",
         "build_of_openjdk",
