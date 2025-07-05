@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from utils.file_utils import save_json
+from core.utils import save_json
 
 
 def set_config(jvm_root: Path, jdk_home: Path, cache_home: Path):

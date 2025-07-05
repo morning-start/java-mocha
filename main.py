@@ -5,12 +5,13 @@ from typing import Optional
 import typer
 from typing_extensions import Annotated
 
-from api import Distribution, Foojay, OperatingSystem
-from api.type import Architecture, SupportTerm, enum2val
+from core.foojay import Foojay
+from core.handler import JSONDataHandler
+from core.type import Architecture, Distribution, OperatingSystem, SupportTerm, enum2val
+from core.utils import load_json, mk_sure, save_json
 from func.config import set_config
+from func.list import list_publisher
 from func.sync import sync_data
-from utils.file_utils import load_json, mk_sure, save_json
-from utils.json_handler import JSONDataHandler
 
 app = typer.Typer(
     no_args_is_help=True,
@@ -58,7 +59,10 @@ def sync():
 
 
 @app.command(help="list infos for jdk, publisher, version")
-def list(publisher: str = None, version: int = None):
+def list(
+    publisher: Annotated[bool | str, typer.Option(help="Publisher name")] = False,
+    version: Annotated[int | bool, typer.Option(help="Version flag")] = False,
+):
     pass
 
 
@@ -70,4 +74,6 @@ def query(publisher: Annotated[str, typer.Option(help="JDK 发布者")] = None):
 
 if __name__ == "__main__":
     # sync_data()
-    app()
+    # app()
+    data = Path("data")
+    print(list_publisher(data))

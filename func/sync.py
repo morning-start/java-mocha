@@ -1,8 +1,8 @@
 from pathlib import Path
 
-from api import Foojay, OperatingSystem
-from api.type import Architecture
-from utils.file_utils import save_json
+from core import Foojay
+from core.type import Architecture, OperatingSystem
+from core.utils import save_json
 
 
 def sync_data(data: Path):

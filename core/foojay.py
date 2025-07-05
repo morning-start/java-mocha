@@ -2,7 +2,7 @@ from urllib.parse import urljoin
 
 import requests
 
-from api.type import (
+from .type import (
     Architecture,
     ArchiveType,
     Distribution,
