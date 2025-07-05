@@ -9,7 +9,7 @@ from core import Foojay, JSONDataHandler
 from core.handler import show_table
 from core.type import Architecture, Distribution, OperatingSystem, SupportTerm, enum2val
 from core.utils import load_json, mk_sure, save_json
-from func.config import set_config
+from func.config import init_config, set_config
 from func.list import list_publisher
 from func.sync import sync_data
 
@@ -47,8 +47,16 @@ def config(
             help="Cache directory, default is the `cache` directory under the JVM root directory."
         ),
     ] = None,
+    #  set proxy https:
+    proxy: Annotated[
+        Optional[str],
+        typer.Option(
+            help="Proxy server, default is the `http_proxy` environment variable."
+        ),
+    ] = None,
 ):
-    set_config(jvm_root, jdk_home, cache_home)
+    init_config(jvm_root, jdk_home, cache_home)
+    set_config(jvm_root, "proxy", proxy)
 
 
 @app.command(

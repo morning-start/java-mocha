@@ -34,3 +34,46 @@ jobs:
       uses: ncipollo/release-action@v1.18.0
       with:
           artifacts: ./dist/*
+  release-on-linux:
+    name: Release on Linux
+    permissions:  # 添加权限设置
+      contents: write  # 允许读写仓库内容
+    runs-on: ubuntu-latest
+    env:
+      PYTHONIOENCODING: utf-8  # 强制 Python 使用 UTF-8 编码
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Install UV
+      run: |
+        powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+
+        
+    - name: Sync dependencies with UV
+      run: uv sync
+      
+    - name: Build the project
+      run: uv run build.py
+
+    - name: Create Release
+      uses: ncipollo/release-action@v1.18.0
+      with:
+          artifacts: ./dist/*
+  release-on-mac:
+    name: Release on macOS
+    permissions:
+      contents: write
+    runs-on: macos-latest
+    env:
+      PYTHONIOENCODING: utf-8
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    - name: Install UV
+      run: |
+        curl -sS https://uv.astral.sh | bash
+    - name: Sync dependencies with UV
+      run: uv sync
+
+    

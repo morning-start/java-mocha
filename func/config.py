@@ -1,9 +1,9 @@
 from pathlib import Path
 
-from core.utils import save_json
+from core.utils import load_json, save_json
 
 
-def set_config(jvm_root: Path, jdk_home: Path, cache_home: Path):
+def init_config(jvm_root: Path, jdk_home: Path, cache_home: Path):
     """
     配置 Java Mocha 的 JVM 根目录、JDK 目录和缓存目录。
     Parameters:
@@ -16,7 +16,7 @@ def set_config(jvm_root: Path, jdk_home: Path, cache_home: Path):
         缓存目录，默认为 JVM 根目录下的 `cache` 目录。
     """
     # Initialize the configuration file
-    config_file = jvm_root / ".java-mocha" / "config.json"
+    config_file = jvm_root / "config.json"
     jdk_home = jvm_root / "jdk" if jdk_home is None else jdk_home
     cache_home = jvm_root / "cache" if cache_home is None else cache_home
     cfg = {
@@ -29,3 +29,13 @@ def set_config(jvm_root: Path, jdk_home: Path, cache_home: Path):
     cache_home.mkdir(parents=True, exist_ok=True)
 
     save_json(config_file, cfg)
+
+
+def set_config(jvm_root: Path, key: str, value: str):
+    """
+    设置配置文件中的key-value
+    """
+    config_file = jvm_root / "config.json"
+    config = load_json(config_file)
+    config[key] = value
+    save_json(config_file, config)
