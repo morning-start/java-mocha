@@ -1,8 +1,10 @@
 import os
 from pathlib import Path
+from tkinter import NO
 from typing import Optional
 
 import typer
+from click.core import F
 from rich.console import Console
 from typing_extensions import Annotated
 
@@ -103,14 +105,21 @@ def list(
         publisher_data = list_publisher(cfg.data_dir)
         table = show_table(publisher_data)
         log.info(table)
-
     else:
         # typer处理错误，输入不符合规范
-        log.error("input is not supported")
+        log.error("input is not supported, please use --help to view usage")
 
 
 @app.command(help="Query available JDKs")
-def query(publisher: Annotated[str, typer.Option(help="JDK 发布者")] = None):
+def query(
+    publisher: Annotated[
+        str, typer.Option(..., "--publisher", "-p", help="The publisher name")
+    ],
+    version: Annotated[
+        bool,
+        typer.Option(..., "--version", "-v", help="Detailed version information"),
+    ] = False,
+):
 
     pass
 

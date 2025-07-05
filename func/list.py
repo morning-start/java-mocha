@@ -29,7 +29,7 @@ def list_publisher(data_dir: Path):
     """
     handler = JSONDataHandler.load_data(data_dir / "distributions.json")
     fields = [
-        "name",
+        "api_parameter",
         "build_of_openjdk",
         "build_of_graalvm",
         "official_uri",
@@ -41,7 +41,7 @@ def list_publisher(data_dir: Path):
         build_type = "openjdk" if item["build_of_openjdk"] else "graalvm"
         new_publisher.append(
             {
-                "name": item["name"],
+                "name": item["api_parameter"],
                 "build": build_type,
                 "official_uri": item["official_uri"],
             }
