@@ -6,17 +6,20 @@ import zipfile
 from pathlib import Path
 
 
-def compress_files(files: list[Path], output: Path):
+def compress_files(folder: Path, export: Path, app_name: str, version: str):
     """
     压缩文件为一个压缩包文件
     :param files: 要压缩的文件列表
     :param output: 压缩包文件路径
     """
+    files = list(folder.glob("*"))
     if platform.system() == "Windows":
+        output = export / f"{app_name}-{platform.system().lower()}-{version}.zip"
         with zipfile.ZipFile(output, "w", zipfile.ZIP_DEFLATED) as zipf:
             for file in files:
                 zipf.write(file, file.name)
     else:
+        output = export / f"{app_name}-{platform.system().lower()}-{version}.tar.gz"
         with tarfile.open(output, "w:gz") as tar:
             for file in files:
                 tar.add(file, file.name)
@@ -39,13 +42,10 @@ try:
     subprocess.run(cmd, check=True)
     print("应用构建成功！")
     # 压缩 dist 目录下的文件为一个压缩包文件
-    dist_dir = Path("dist")
+    folder = Path("dist")
     export = Path("export")
     export.mkdir(exist_ok=True)
     platform_name = platform.system()
-    compress_files(
-        dist_dir.glob("*"),
-        export / f"{APP_NAME}-{platform_name.lower()}-{VERSION}.zip",
-    )
+    compress_files(folder, export, APP_NAME, VERSION)
 except subprocess.CalledProcessError as e:
     print(f"应用构建失败: {e}")
