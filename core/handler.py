@@ -84,8 +84,8 @@ class JSONDataHandler:
         self,
         key: str,
         agg_map: (
-            Dict[str, Callable[list[EleType], list[EleType]]]
-            | Callable[list[EleType], list[EleType]]
+            Dict[str, Callable[[list[EleType]], list[EleType]]]
+            | Callable[[list[EleType]], list[EleType]]
         ) = None,
     ):
         """
