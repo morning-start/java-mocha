@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Optional
 
 import typer
 from typing_extensions import Annotated
@@ -169,10 +169,10 @@ def install(
 ):
     jvm_root = load_jvm()
     cfg = Config.load(jvm_root)
-    full_install_process(jdk, cfg, force)
-    # try:
-    # except Exception as e:
-    # log.error(f"Install failed: {e}")
+    try:
+        full_install_process(jdk, cfg, force)
+    except Exception as e:
+        log.error(f"Install failed: {e}")
 
 
 @app.command(

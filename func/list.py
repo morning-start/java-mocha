@@ -1,8 +1,6 @@
 from pathlib import Path
-from typing import List
 
-from core import JSONDataHandler
-from core.handler import ItemType, JSONType
+from core.handler import ItemType, JSONDataHandler, JSONType
 from core.type import DataFile
 
 

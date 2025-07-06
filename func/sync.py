@@ -2,7 +2,7 @@ from pathlib import Path
 
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
-from core import Foojay
+from core.foojay import Foojay
 from core.type import Architecture, ArchiveType, DataFile, Distribution, OperatingSystem
 from core.utils import save_json
 

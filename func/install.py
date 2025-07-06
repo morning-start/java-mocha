@@ -1,9 +1,8 @@
-import hashlib
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
 import requests
-from click.core import F
+from rich.progress import Progress, SpinnerColumn, TextColumn
 
 from core.handler import JSONDataHandler
 from core.style import download_package
@@ -130,8 +129,15 @@ def install_jdk(file_path: Path, jdk_dir: Path):
 
 def full_install_process(jdk: str, cfg: Config, force: bool = False):
     info_url = query_package_url(jdk, cfg.data_dir)
-    info = get_package_info(info_url, cfg.proxy)
-    checksum_type, checksum = get_checksum(info, cfg.proxy)
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        transient=True,
+    ) as progress:
+        progress.add_task(description="Query package info...")
+        info = get_package_info(info_url, cfg.proxy)
+        progress.add_task(description="Get checksum...")
+        checksum_type, checksum = get_checksum(info, cfg.proxy)
     package_path = download_cache(info, cfg.cache_home, cfg.proxy, force)
     flag = check_pack(package_path, checksum, checksum_type)
     if not flag:

@@ -1,15 +1,10 @@
-from typing import Callable, Dict, List, Literal, Optional
-
-from rich.table import Table
+from typing import Callable, Dict, List, Optional
 
 from .utils import load_json
 
 EleType = str | int | bool | list | dict
 ItemType = Dict[str, EleType]
 JSONType = List[ItemType]
-
-
-from rich.tree import Tree
 
 
 class JSONDataHandler:

@@ -1,7 +1,6 @@
 from pathlib import Path
-from typing import Callable
 
-from core import JSONDataHandler
+from core.handler import JSONDataHandler
 from core.type import DataFile, SupportTerm
 
 

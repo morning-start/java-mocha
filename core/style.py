@@ -1,6 +1,5 @@
-import hashlib
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Literal, Optional
+from typing import Dict, List, Optional
 
 import requests
 from rich.progress import (
@@ -13,12 +12,6 @@ from rich.progress import (
     TransferSpeedColumn,
 )
 from rich.table import Table
-
-from core.handler import JSONDataHandler
-from core.type import DataFile
-from func.config import Config
-
-from .utils import load_json
 
 EleType = str | int | bool | list | dict
 ItemType = Dict[str, EleType]
