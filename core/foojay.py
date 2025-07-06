@@ -53,7 +53,7 @@ class Foojay:
         self,
         version: str = None,
         distro_name: Distribution = None,
-        include_versions: bool = True,
+        include_versions: bool = False,
         include_synonyms: bool = False,
     ):
         if version is not None:

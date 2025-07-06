@@ -11,3 +11,4 @@ wheels/
 *.spec
 version_file.txt
 data/
+.env

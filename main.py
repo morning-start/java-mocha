@@ -68,7 +68,7 @@ def sync():
     if cfg.proxy:
         log.info(f"Syncing data from Foojay with proxy {cfg.proxy}")
         proxies = {"https": cfg.proxy, "http": cfg.proxy}
-    sync_data(jvm_root, proxies)
+    sync_data(cfg.data_dir, proxies)
 
 
 @app.command(help="list infos for local jdk, all publisher, all version")
