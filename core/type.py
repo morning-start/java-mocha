@@ -4,6 +4,12 @@ from typing import Literal
 from .utils import get_sys_arch, get_sys_os
 
 
+class DataFile(Enum):
+    PUBLISHERS = "distributions.json"
+    VERSIONS = "versions.json"
+    PACKAGES = "packages.json"
+
+
 def enum2val(enum_list: list[Enum] | Enum) -> list[str] | str:
     if isinstance(enum_list, list):
         return [enum.value for enum in enum_list]

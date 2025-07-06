@@ -3,7 +3,7 @@ from pathlib import Path
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
 from core import Foojay
-from core.type import Architecture, OperatingSystem
+from core.type import Architecture, DataFile, OperatingSystem
 from core.utils import save_json
 
 
@@ -17,7 +17,7 @@ def sync_data(jvm_root: Path, proxies: dict = None):
     ) as progress:
         progress.add_task(description="Sync distributions...")
         distributions = foojay.search_distributions()
-        save_json(data_path / "distributions.json", distributions)
+        save_json(data_path / DataFile.PUBLISHERS.value, distributions)
 
         progress.add_task(description="Sync packages...")
         packages = foojay.search_packages(
@@ -26,8 +26,8 @@ def sync_data(jvm_root: Path, proxies: dict = None):
             javafx_bundled=False,
             package_type="jdk",
         )
-        save_json(data_path / "packages.json", packages)
+        save_json(data_path / DataFile.PACKAGES.value, packages)
 
         progress.add_task(description="Sync versions...")
         versions = foojay.search_versions()
-        save_json(data_path / "versions.json", versions)
+        save_json(data_path / DataFile.VERSIONS.value, versions)

@@ -3,6 +3,7 @@ from typing import List
 
 from core import JSONDataHandler
 from core.handler import ItemType, JSONType, get_version_part
+from core.type import DataFile
 
 
 def list_local_jdk(jdk_home: Path):
@@ -20,7 +21,7 @@ def list_publisher(data_dir: Path):
     """
     获取发行版的 name、build_of_openjdk、build_of_graalvm、official_uri 和 versions 信息，versions 只显示 major 级别
     """
-    handler = JSONDataHandler.load_data(data_dir / "distributions.json")
+    handler = JSONDataHandler.load_data(data_dir / DataFile.PUBLISHERS.value)
     fields = [
         "api_parameter",
         "build_of_openjdk",
@@ -54,7 +55,7 @@ def list_version(data_dir: Path) -> JSONType:
     """
     获取版本的 name、version、release_date、support_term、download_uri、download_size、download_hash 信息
     """
-    handler = JSONDataHandler.load_data(data_dir / "versions.json")
+    handler = JSONDataHandler.load_data(data_dir / DataFile.VERSIONS.value)
     fields = [
         "major_version",
         "term_of_support",
@@ -73,7 +74,7 @@ def list_publish_version(data_dir: Path):
         major_version = (get_version_part(version) for version in versions)
         return list(set(major_version))
 
-    handler = JSONDataHandler.load_data(data_dir / "distributions.json")
+    handler = JSONDataHandler.load_data(data_dir / DataFile.PUBLISHERS.value)
     fields = [
         "api_parameter",
         "versions",
