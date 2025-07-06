@@ -4,7 +4,7 @@ from rich.table import Table
 
 from .utils import load_json
 
-EleType = str | int | bool
+EleType = str | int | bool | list | dict
 ItemType = Dict[str, EleType]
 JSONType = List[ItemType]
 

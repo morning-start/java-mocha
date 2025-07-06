@@ -16,10 +16,12 @@ app = typer.Typer(
     no_args_is_help=True,
     add_completion=False,
     short_help="Java Mocha is a Java version management tool developed based on the Foojay API.",
-    help="""Java Mocha is a Java version management tool developed based on the Foojay API.
-It can be used for version management via the command-line interface or integrated through the API.""",
-    epilog="""Before using, 1. please first initialize the configuration with `jvm config`,
-2. then sync the data with `jvm sync`. 3. Use `--help` to view specific command usage.""",
+    help="""Java Mocha is a Java version management tool developed based on the Foojay API.\n
+    It can be used for version management via the command-line interface or integrated through the API.""",
+    epilog="""Before using, \n
+    1. please first initialize the configuration with `jvm config`,\n
+    2. then sync the data with `jvm sync`. \n
+    3. Use `--help` to view specific command usage.""",
 )
 
 
@@ -134,7 +136,8 @@ def install(
             ...,
             "--jdk",
             "-j",
-            help="The JDK version format as publisher@version e.g. oracle@11",
+            help="""The JDK version format as publisher@version\n
+            e.g. oracle@23, oracle@23.0.2, oracle@latest""",
         ),
     ],
     force: Annotated[
@@ -150,6 +153,24 @@ def install(
     epilog="Before using, please view local jdk version via `jvm list` command. ",
 )
 def use(
+    jdk: Annotated[
+        str,
+        typer.Option(
+            ...,
+            "--jdk",
+            "-j",
+            help="The JDK version format as publisher@version e.g. oracle@11",
+        ),
+    ],
+):
+    pass
+
+
+@app.command(
+    help="Uninstall JDKs",
+    epilog="Before using, please view local jdk version via `jvm list` command. ",
+)
+def uninstall(
     jdk: Annotated[
         str,
         typer.Option(
