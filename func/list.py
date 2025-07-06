@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import List
 
 from core import JSONDataHandler
-from core.handler import ItemType, JSONType, get_version_part
+from core.handler import ItemType, JSONType, refine_versions
 from core.type import DataFile
 
 
@@ -70,16 +70,12 @@ def list_version(data_dir: Path) -> JSONType:
 
 
 def list_publish_version(data_dir: Path):
-    def _refine_major_versions(versions: List[str]):
-        major_version = (get_version_part(version) for version in versions)
-        return list(set(major_version))
-
     handler = JSONDataHandler.load_data(data_dir / DataFile.PUBLISHERS.value)
     fields = [
         "api_parameter",
         "versions",
     ]
     data = handler.get_specific_fields(fields)
-    data.apply("versions", _refine_major_versions)
+    data.apply("versions", refine_versions)
     data.rename({"api_parameter": "name", "versions": "major_version"})
     return data.document

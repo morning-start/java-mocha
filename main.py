@@ -9,6 +9,7 @@ from core import log
 from core.handler import show_table
 from func.config import Config, init_config
 from func.list import list_local_jdk, list_publish_version, list_publisher, list_version
+from func.query import query_publisher_major, query_publisher_versions
 from func.sync import sync_data
 
 app = typer.Typer(
@@ -111,12 +112,18 @@ def query(
         str, typer.Option(..., "--publisher", "-p", help="The publisher name")
     ],
     version: Annotated[
-        bool,
-        typer.Option(..., "--version", "-v", help="Detailed version information"),
-    ] = False,
+        int,
+        typer.Option(..., "--version", "-v", help="Detailed major version information"),
+    ] = None,
 ):
-
-    pass
+    jvm_root = load_jvm()
+    cfg = Config.load(jvm_root)
+    if version:
+        data = query_publisher_versions(cfg.data_dir, publisher, version)
+    else:
+        data = query_publisher_major(cfg.data_dir, publisher)
+    table = show_table(data)
+    log.info(table)
 
 
 @app.command(help="Install JDKs")

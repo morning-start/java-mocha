@@ -18,6 +18,13 @@ def show_table(data: JSONType):
     return table
 
 
+def refine_versions(
+    versions: List[str], part: Literal["major", "minor", "patch"] = "major"
+):
+    major_version = (get_version_part(version, part) for version in versions)
+    return list(set(major_version))
+
+
 def get_version_part(
     version_str: str, part: Literal["major", "minor", "patch"] = "major"
 ) -> str:
@@ -61,7 +68,6 @@ class JSONDataHandler:
             for old_name, new_name in name_map.items():
                 if old_name in item:
                     item[new_name] = item.pop(old_name)
-        return self
 
     def orderby(self, levels: list[str]):
         # self.document 是一个list，其中每一dict为Item
@@ -74,21 +80,16 @@ class JSONDataHandler:
                     new_item[level] = item[level]
             new_doc.append(new_item)
         self.document = new_doc
-        return self
 
     def sort(self, key: str, reverse: bool = False):
-        """
-        排序功能
-        """
+        """排序功能"""
         self.document.sort(key=lambda x: x[key], reverse=reverse)
-        return self
 
     def map(self, func: Callable[[ItemType], ItemType]):
         """
         对每个Item应用函数
         """
         self.document = [func(item) for item in self.document]
-        return self
 
     def apply(self, key: str, func: Callable[[EleType], EleType]):
         """
@@ -96,7 +97,6 @@ class JSONDataHandler:
         """
         for item in self.document:
             item[key] = func(item[key])
-        return self
 
     def filter(self, condition: Callable[[ItemType], bool]):
         """过滤功能"""
