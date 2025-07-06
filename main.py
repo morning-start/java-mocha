@@ -1,15 +1,17 @@
 import os
 from pathlib import Path
-from typing import Optional
+from typing import Literal, Optional
 
 import typer
 from typing_extensions import Annotated
 
 from core import log
-from core.handler import show_table
+from core.style import show_table, show_tree
+from core.type import SupportTerm
 from func.config import Config, init_config
+from func.install import full_install_process
 from func.list import list_local_jdk, list_publish_version, list_publisher, list_version
-from func.query import query_publisher_major, query_publisher_versions
+from func.query import query_info, query_info_term, query_info_version
 from func.sync import sync_data
 
 app = typer.Typer(
@@ -85,26 +87,29 @@ def list(
     # 都为 False 时，列出本地jdk信息 publisher@version
     if not publisher and not version:
         jdks = list_local_jdk(cfg.jdk_home)
-        jdks = ["a", "b", "c"]
         if not jdks:
             log.warning("No JDK found, please install first.")
         else:
-            # TODO  格式化输出，正在使用，排序
-            log.info(*jdks, sep="\n")
+            txt = "Installed jdk (* marks in use)"
+            tree = show_tree(jdks, cfg.jdk_version, txt)
+            log.info(tree)
     # version 为 True 时，列出所有major发行版
     elif publisher and version:
         data = list_publish_version(cfg.data_dir)
-        table = show_table(data)
+        title = "Each publisher available major versions"
+        table = show_table(data, title)
         log.info(table)
 
     elif version:
         version_data = list_version(cfg.data_dir)
-        table = show_table(version_data)
+        title = "major versions infos"
+        table = show_table(version_data, title)
         log.info(table)
     # publisher 为 True 时，列出所有发行商
     elif publisher:
         publisher_data = list_publisher(cfg.data_dir)
-        table = show_table(publisher_data)
+        title = "publishers infos"
+        table = show_table(publisher_data, title)
         log.info(table)
 
 
@@ -113,19 +118,36 @@ def query(
     publisher: Annotated[
         str, typer.Option(..., "--publisher", "-p", help="The publisher name")
     ],
-    version: Annotated[
+    major_version: Annotated[
         int,
-        typer.Option(..., "--version", "-v", help="Detailed major version information"),
+        typer.Option(
+            ..., "--major_version", "-v", help="Detailed major version information"
+        ),
+    ] = None,
+    term_of_support: Annotated[
+        SupportTerm,
+        typer.Option(..., "--term_of_support", "-t", help="Term of support"),
     ] = None,
 ):
     jvm_root = load_jvm()
     cfg = Config.load(jvm_root)
-    if version:
-        data = query_publisher_versions(cfg.data_dir, publisher, version)
+    if term_of_support and major_version:
+        log.error("term_of_support and major_version can not be used at the same time")
+    elif major_version:
+        data = query_info_version(cfg.data_dir, publisher, major_version)
+        txt = f"JDKs for {publisher} version {major_version}"
+        table = show_table(data, txt)
+        log.info(table)
+    elif term_of_support:
+        data = query_info_term(cfg.data_dir, publisher, term_of_support)
+        txt = f"Latest JDKs for {publisher} on {term_of_support}"
+        table = show_table(data, txt)
+        log.info(table)
     else:
-        data = query_publisher_major(cfg.data_dir, publisher)
-    table = show_table(data)
-    log.info(table)
+        data = query_info(cfg.data_dir, publisher)
+        txt = f"Latest JDKs for publisher {publisher}"
+        table = show_table(data, txt)
+        log.info(table)
 
 
 @app.command(help="Install JDKs")
@@ -134,8 +156,8 @@ def install(
         str,
         typer.Option(
             ...,
-            "--jdk",
-            "-j",
+            "--publisher@version",
+            "-jdk",
             help="""The JDK version format as publisher@version\n
             e.g. oracle@23, oracle@23.0.2, oracle@latest""",
         ),
@@ -145,7 +167,12 @@ def install(
         typer.Option(..., "--force", "-f", help="Force install"),
     ] = False,
 ):
-    pass
+    jvm_root = load_jvm()
+    cfg = Config.load(jvm_root)
+    full_install_process(jdk, cfg, force)
+    # try:
+    # except Exception as e:
+    # log.error(f"Install failed: {e}")
 
 
 @app.command(
@@ -157,8 +184,8 @@ def use(
         str,
         typer.Option(
             ...,
-            "--jdk",
-            "-j",
+            "--publisher@version",
+            "-jdk",
             help="The JDK version format as publisher@version e.g. oracle@11",
         ),
     ],

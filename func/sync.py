@@ -3,10 +3,11 @@ from pathlib import Path
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
 from core import Foojay
-from core.type import Architecture, DataFile, Distribution, OperatingSystem
+from core.type import Architecture, ArchiveType, DataFile, Distribution, OperatingSystem
 from core.utils import save_json
 
-SUPPORTED_PUBLISHER = [Distribution.ORACLE, Distribution.ZULU]
+SUPPORTED_PUBLISHER = [Distribution.ORACLE]
+SUPPORTED_ARCHIVE_TYPE = [ArchiveType.TAR_GZ, ArchiveType.ZIP]
 
 
 def sync_data(data_dir: Path, proxies: dict = None):
@@ -24,6 +25,7 @@ def sync_data(data_dir: Path, proxies: dict = None):
         packages = foojay.search_packages(
             operating_system=OperatingSystem.get_local_os(),
             architecture=Architecture.get_local_architecture(),
+            archive_type=SUPPORTED_ARCHIVE_TYPE,
             distribution=SUPPORTED_PUBLISHER,
             javafx_bundled=False,
             package_type="jdk",

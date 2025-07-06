@@ -9,35 +9,7 @@ ItemType = Dict[str, EleType]
 JSONType = List[ItemType]
 
 
-def show_table(data: JSONType):
-    table = Table()
-    for key in data[0].keys():
-        table.add_column(key)
-    for item in data:
-        table.add_row(*[str(item[key]) for key in item.keys()])
-    return table
-
-
-def refine_versions(
-    versions: List[str], part: Literal["major", "minor", "patch"] = "major"
-):
-    major_version = (get_version_part(version, part) for version in versions)
-    return list(set(major_version))
-
-
-def get_version_part(
-    version_str: str, part: Literal["major", "minor", "patch"] = "major"
-) -> str:
-    """
-    从版本号字符串中提取 major 级别版本号
-    """
-    # 移除可能的后缀如 -ea, + 等
-    version_str = version_str.split("-")[0].split("+")[0]
-
-    version_levels = ["major", "minor", "patch"]
-
-    idx = version_levels.index(part)
-    return version_str.split(".")[idx]
+from rich.tree import Tree
 
 
 class JSONDataHandler:
@@ -102,16 +74,6 @@ class JSONDataHandler:
         """过滤功能"""
         return JSONDataHandler([item for item in self.document if condition(item)])
 
-    def group_by(self, key: str):
-        """分组汇总功能"""
-        grouped_data = {}
-        for item in self.document:
-            group_key = item.get(key)
-            if group_key not in grouped_data:
-                grouped_data[group_key] = []
-            grouped_data[group_key].append(item)
-        return JSONDataHandler(grouped_data)
-
     def get_specific_fields(self, fields: List[str]):
         """
         获取数据中指定字段的信息
@@ -122,3 +84,47 @@ class JSONDataHandler:
             new_item = {k: v for k, v in item.items() if k in fields}
             result.append(new_item)
         return JSONDataHandler(result)
+
+    def group_by(
+        self,
+        key: str,
+        agg_map: (
+            Dict[str, Callable[list[EleType], list[EleType]]]
+            | Callable[list[EleType], list[EleType]]
+        ) = None,
+    ):
+        """
+        按照指定 key 筛选，将所有该 key 的 value 一样的放到一起，
+        除了该 key 之外的所有键的值通过 list 组合到一起。
+        可传入聚合函数对组合后的列表进行处理。
+
+        Args:
+            key (str): 用于分组的键名。
+            agg_map (Dict[str, Callable[ItemType, ItemType]] | Callable[ItemType, ItemType], optional): 聚合函数，用于处理组合后的列表。默认为 None。
+
+        Returns:
+            JSONDataHandler: 分组后的结果。
+        """
+        grouped_data: dict[str, dict[str, EleType | list[EleType]]] = {}
+        for item in self.document:
+            key_value = item.get(key)
+            if key_value not in grouped_data:
+                grouped_data[key_value] = {key: key_value}
+            for k, v in item.items():
+                if k != key:
+                    if k not in grouped_data[key_value]:
+                        grouped_data[key_value][k] = []
+                    grouped_data[key_value][k].append(v)
+
+        if isinstance(agg_map, dict):
+            for group in grouped_data.values():
+                for k, v in group.items():
+                    if k in agg_map:
+                        group[k] = agg_map[k](v)
+        elif isinstance(agg_map, Callable):
+            for group in grouped_data.values():
+                for k, v in group.items():
+                    if k != key:
+                        group[k] = agg_map(v)
+
+        return JSONDataHandler(list(grouped_data.values()))
