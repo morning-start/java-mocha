@@ -5,19 +5,21 @@ import typer
 from typing_extensions import Annotated
 
 from core import log
-from core.style import show_table, show_tree
+from core.style import AliasGroup, show_table, show_tree
 from core.type import SupportTerm
 from func.config import Config, check_java_home, init_config
 from func.install import full_install_process
 from func.list import list_local_jdk, list_publish_version, list_publisher, list_version
 from func.query import query_info, query_info_term, query_info_version
+from func.switch import switch_jdk
 from func.sync import sync_data
 from func.uninstall import uninstall_jdk
-from func.use import switch_jdk
 
 app = typer.Typer(
     no_args_is_help=True,
     add_completion=False,
+    cls=AliasGroup,
+    context_settings={"help_option_names": ["-h", "--help"]},
     short_help="Java Mocha is a Java version management tool developed based on the Foojay API.",
     help="""Java Mocha is a Java version management tool developed based on the Foojay API.\n
     It can be used for version management via the command-line interface or integrated through the API.""",
@@ -70,7 +72,10 @@ def sync():
     sync_data(cfg.data_dir, proxies)
 
 
-@app.command(help="list infos for local jdk, all publisher, all version")
+@app.command(
+    "list | ls",
+    help="list infos for local jdk, all publisher, all version",
+)
 def list(
     publisher: Annotated[
         bool, typer.Option(..., "--publisher", "-p", help="Publisher name")
@@ -109,7 +114,7 @@ def list(
         log.info(table)
 
 
-@app.command(help="Query available JDKs")
+@app.command("query | q", help="Query available JDKs")
 def query(
     publisher: Annotated[str, typer.Argument(help="The publisher name")],
     major_version: Annotated[
@@ -143,7 +148,7 @@ def query(
         log.info(table)
 
 
-@app.command(help="Install JDKs")
+@app.command("install | i", help="Install JDKs")
 def install(
     jdk: Annotated[
         str,
@@ -165,12 +170,13 @@ def install(
 
 
 @app.command(
+    "switch | sw",
     help="Switch JAVA_HOME environment variable.",
     epilog="""Before using, \n
     1. please view local jdk version via `jvm list` command.\n
     2. set JAVA_HOME = JVM_ROOT/current """,
 )
-def use(
+def switch(
     jdk: Annotated[
         str,
         typer.Argument(
@@ -187,6 +193,7 @@ def use(
 
 
 @app.command(
+    "uninstall | u",
     help="Uninstall JDKs",
     epilog="Before using, please view local jdk version via `jvm list` command. ",
 )
@@ -207,5 +214,4 @@ def uninstall(
 
 
 if __name__ == "__main__":
-    pass
     app()

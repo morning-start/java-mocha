@@ -12,3 +12,5 @@ wheels/
 version_file.txt
 data/
 .env
+export/
+test/

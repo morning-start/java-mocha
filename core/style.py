@@ -1,7 +1,9 @@
+import re
 from pathlib import Path
 from typing import Dict, List, Optional
 
 import requests
+import typer.rich_utils
 from rich.progress import (
     BarColumn,
     DownloadColumn,
@@ -12,13 +14,31 @@ from rich.progress import (
     TransferSpeedColumn,
 )
 from rich.table import Table
+from rich.tree import Tree
+from typer.core import TyperGroup
 
 EleType = str | int | bool | list | dict
 ItemType = Dict[str, EleType]
 JSONType = List[ItemType]
+import typer
+
+typer.rich_utils.rich_render_text
 
 
-from rich.tree import Tree
+class AliasGroup(TyperGroup):
+
+    _CMD_SPLIT_P = re.compile(r" ?[,|] ?")
+
+    def get_command(self, ctx, cmd_name):
+        cmd_name = self._group_cmd_name(cmd_name)
+        return super().get_command(ctx, cmd_name)
+
+    def _group_cmd_name(self, default_name):
+        for cmd in self.commands.values():
+            name = cmd.name
+            if name and default_name in self._CMD_SPLIT_P.split(name):
+                return name
+        return default_name
 
 
 def show_tree(versions: list[str], current: str = "", label: str = ""):
