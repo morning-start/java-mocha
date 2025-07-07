@@ -25,7 +25,7 @@ scoop install code/jvm
 可以事先配置环境变量 `JVM_ROOT` 来控制安装目录，默认值为 `%USERPROFILE%\.java-mocha`。
 
 注意事项：
-1. 使用前需要手动配置好 `JAVA_HOME` 环境变量为 `JVM_ROOT/current`。
+1. 使用前需要手动配置好 `JAVA_HOME` 环境变量为 `JVM_ROOT/default`。
 2. 首次使用需要同步数据，来获取最新的 JDK 数据信息。
 
 特点：

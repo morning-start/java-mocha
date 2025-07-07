@@ -6,6 +6,16 @@ import zipfile
 from pathlib import Path
 
 
+def remove_directory(path: Path):
+    """递归删除非空目录"""
+    for item in path.iterdir():
+        if item.is_dir():
+            remove_directory(item)
+        else:
+            item.unlink()
+    path.rmdir()
+
+
 def move_and_clean_subfolder(target_folder: Path):
     """
     检测指定文件夹下是否只有一个文件夹，如果是，则将子文件夹的所有内容移动到指定文件夹，然后删除子文件夹。

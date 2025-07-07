@@ -7,7 +7,7 @@ from typing_extensions import Annotated
 from core import log
 from core.style import AliasGroup, show_table, show_tree
 from core.type import SupportTerm
-from func.config import Config, check_java_home, init_config
+from func.config import Config, init_config
 from func.install import full_install_process
 from func.list import list_local_jdk, list_publish_version, list_publisher, list_version
 from func.query import query_info, query_info_term, query_info_version
@@ -47,7 +47,13 @@ def config(
             help="Cache directory, default is the `cache` directory under the JVM root directory."
         ),
     ] = None,
-    #  set proxy https:
+    java_home: Annotated[
+        Optional[Path],
+        typer.Option(
+            envvar="JAVA_HOME",
+            help="JAVA_HOME env, the source of symlink",
+        ),
+    ] = None,
     proxy: Annotated[
         Optional[str],
         typer.Option(
@@ -56,10 +62,14 @@ def config(
     ] = None,
 ):
     jvm_root = Config.load_jvm()
-    init_config(jvm_root, jdk_home, cache_home, proxy)
+    init_config(jvm_root, jdk_home, java_home, cache_home, proxy)
     log.info("Config saved successfully.")
-    if not check_java_home(jvm_root):
-        log.warning(f"Please set JAVA_HOME to {jvm_root / "current"} manually.")
+    if not java_home:
+        log.warning(
+            f"Please set JAVA_HOME to {jvm_root / 'default'} manually. And do again."
+        )
+    else:
+        log.debug(f"make sure {java_home} is empty or not exist")
 
 
 @app.command(help="Sync the Foojay JDK data to local JSON files.")
@@ -171,10 +181,8 @@ def install(
 
 @app.command(
     "switch | sw",
-    help="Switch JAVA_HOME environment variable.",
-    epilog="""Before using, \n
-    1. please view local jdk version via `jvm list` command.\n
-    2. set JAVA_HOME = JVM_ROOT/current """,
+    help="Switch java version.",
+    epilog="""Please view local jdk version via `jvm list` command. """,
 )
 def switch(
     jdk: Annotated[

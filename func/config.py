@@ -2,12 +2,13 @@ import os
 from pathlib import Path
 from typing import NamedTuple
 
-from core.utils import load_json, save_json
+from core.utils import load_json, remove_directory, save_json
 
 
 class Config(NamedTuple):
     jvm_root: Path
     jdk_home: Path
+    java_home: Path
     cache_home: Path
     data_dir: Path
     proxy: str = ""
@@ -30,14 +31,7 @@ class Config(NamedTuple):
         return self._asdict()
 
     def to_json(self):
-        return {
-            "jvm_root": str(self.jvm_root),
-            "jdk_home": str(self.jdk_home),
-            "cache_home": str(self.cache_home),
-            "data_dir": str(self.data_dir),
-            "proxy": self.proxy,
-            "jdk_version": self.jdk_version,
-        }
+        return {k: str(v) for k, v in self.to_dict().items()}
 
     def init_path(self):
         self.jdk_home.mkdir(parents=True, exist_ok=True)
@@ -45,17 +39,20 @@ class Config(NamedTuple):
         self.data_dir.mkdir(parents=True, exist_ok=True)
 
     @classmethod
-    def from_json(cls, json: dict):
+    def from_json(cls, json: dict[str, str]):
         """
         从 JSON 字符串加载配置
         """
         jvm_root = Path(json["jvm_root"])
         jdk_home = Path(json["jdk_home"])
+        java_home = Path(json["java_home"])
         cache_home = Path(json["cache_home"])
         data_dir = Path(json["data_dir"])
         proxy = json["proxy"]
         jdk_version = json["jdk_version"]
-        return cls(jvm_root, jdk_home, cache_home, data_dir, proxy, jdk_version)
+        return cls(
+            jvm_root, jdk_home, java_home, cache_home, data_dir, proxy, jdk_version
+        )
 
     @classmethod
     def load(cls):
@@ -73,19 +70,17 @@ class Config(NamedTuple):
         save_json(self.jvm_root / "config.json", self.to_json())
 
     def change_jdk(self, jdk_version: str):
-        cfg = Config(
-            self.jvm_root,
-            self.jdk_home,
-            self.cache_home,
-            self.data_dir,
-            self.proxy,
-            jdk_version,
-        )
-        return cfg
+        cfg_dict = self.to_dict()
+        cfg_dict["jdk_version"] = jdk_version
+        return Config.from_json(cfg_dict)
 
 
 def init_config(
-    jvm_root: Path, jdk_home: Path = None, cache_home: Path = None, proxy: str = None
+    jvm_root: Path,
+    jdk_home: Path = None,
+    java_home: Path = None,
+    cache_home: Path = None,
+    proxy: str = None,
 ):
     """
     配置 Java Mocha 的 JVM 根目录、JDK 目录和缓存目录。
@@ -95,6 +90,8 @@ def init_config(
         JVM 根目录，默认为用户主目录下的 `.java-mocha` 目录。
     jdk_home: Path
         JDK 目录，默认为 JVM 根目录下的 `jdk` 目录。
+    java_home: Path
+        JAVA_HOME 环境变量，默认为 JVM 根目录下的 `default` 目录。
     cache_home: Path
         缓存目录，默认为 JVM 根目录下的 `cache` 目录。
     """
@@ -102,6 +99,7 @@ def init_config(
     cfg_dict = {
         "jvm_root": jvm_root,
         "jdk_home": jvm_root / "jdk",
+        "java_home": jvm_root / "default",
         "cache_home": jvm_root / "cache",
         "data_dir": jvm_root / "data",
         "proxy": "",
@@ -113,19 +111,11 @@ def init_config(
         cfg_dict.update(Config.load().to_dict())
 
     # 根据参数更新
-    if jdk_home:
-        cfg_dict["jdk_home"] = jdk_home
-    if cache_home:
-        cfg_dict["cache_home"] = cache_home
-    if proxy:
-        cfg_dict["proxy"] = proxy
+    cfg_dict["jdk_home"] = jdk_home if jdk_home else cfg_dict["jdk_home"]
+    cfg_dict["java_home"] = java_home if java_home else cfg_dict["java_home"]
+    cfg_dict["cache_home"] = cache_home if cache_home else cfg_dict["cache_home"]
+    cfg_dict["proxy"] = proxy if proxy else cfg_dict["proxy"]
 
     cfg = Config.from_json(cfg_dict)
     cfg.init_path()
     cfg.save()
-
-
-def check_java_home(jvm_root: Path):
-    java_home = jvm_root / "current"
-    java_home_env = Path(os.getenv("JAVA_HOME", ""))
-    return java_home_env == java_home

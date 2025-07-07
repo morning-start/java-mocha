@@ -1,16 +1,5 @@
-from pathlib import Path
-
+from core.utils import remove_directory
 from func.config import Config
-
-
-def remove_directory(path: Path):
-    """递归删除非空目录"""
-    for item in path.iterdir():
-        if item.is_dir():
-            remove_directory(item)
-        else:
-            item.unlink()
-    path.rmdir()
 
 
 def uninstall_jdk(jdk: str, cfg: Config):

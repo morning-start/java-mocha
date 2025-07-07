@@ -25,7 +25,7 @@ scoop install code/jvm
 You can configure the `JVM_ROOT` environment variable in advance to control the installation directory. The default value is `%USERPROFILE%\.java-mocha`.
 
 Notes:
-1. Before use, manually configure the `JAVA_HOME` environment variable to `JVM_ROOT/current`.
+1. Before use, manually configure the `JAVA_HOME` environment variable to `JVM_ROOT/default`.
 2. On first use, synchronize the data to obtain the latest JDK data information.
 
 Characteristics:
