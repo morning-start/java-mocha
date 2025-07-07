@@ -32,6 +32,9 @@ def query_package_url(jdk: str, data_dir: Path):
     data = handler.query("distribution", value=p)
     if v == "latest":
         data = data.query("latest_build_available", True)
+    elif v == "lts":
+        data = data.query("term_of_support", "lts")
+        data = data.query("latest_build_available", True)
     elif v.isdigit():
         data = data.query("major_version", int(v))
         data = data.query("latest_build_available", True)

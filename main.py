@@ -164,7 +164,7 @@ def install(
         str,
         typer.Argument(
             help="""The JDK version format as publisher@version\n
-            e.g. oracle@23, oracle@23.0.2, oracle@latest""",
+            e.g. oracle@23, oracle@23.0.2, oracle@latest, oracle@lts""",
         ),
     ],
     force: Annotated[
