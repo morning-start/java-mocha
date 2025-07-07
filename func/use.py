@@ -13,6 +13,8 @@ def switch_jdk(jdk: str, cfg: Config):
             else:
                 java_home.unlink()
         java_home.symlink_to(jdk_path, True)
+        cfg = cfg.change_jdk(jdk)
+        cfg.save()
         return True
     else:
         return False

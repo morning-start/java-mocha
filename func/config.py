@@ -5,12 +5,6 @@ from typing import NamedTuple
 from core.utils import load_json, save_json
 
 
-def load_jvm() -> Path:
-    jvm_root = Path.home() / ".java-mocha"
-    jvm_root = Path(os.getenv("JVM_ROOT", jvm_root))
-    return jvm_root
-
-
 class Config(NamedTuple):
     jvm_root: Path
     jdk_home: Path
@@ -18,6 +12,12 @@ class Config(NamedTuple):
     data_dir: Path
     proxy: str = ""
     jdk_version: str = ""
+
+    @staticmethod
+    def load_jvm():
+        jvm_root = Path.home() / ".java-mocha"
+        jvm_root = Path(os.getenv("JVM_ROOT", jvm_root))
+        return jvm_root
 
     def __repr__(self):
         info = self.to_json()
@@ -58,11 +58,11 @@ class Config(NamedTuple):
         return cls(jvm_root, jdk_home, cache_home, data_dir, proxy, jdk_version)
 
     @classmethod
-    def load(cls, jvm_root: Path):
+    def load(cls):
         """
         从 JVM 根目录加载配置
         """
-        config_file = jvm_root / "config.json"
+        config_file = cls.load_jvm() / "config.json"
         cfg = load_json(config_file)
         return cls.from_json(cfg)
 
@@ -71,6 +71,17 @@ class Config(NamedTuple):
         保存配置到 JVM 根目录
         """
         save_json(self.jvm_root / "config.json", self.to_json())
+
+    def change_jdk(self, jdk_version: str):
+        cfg = Config(
+            self.jvm_root,
+            self.jdk_home,
+            self.cache_home,
+            self.data_dir,
+            self.proxy,
+            jdk_version,
+        )
+        return cfg
 
 
 def init_config(

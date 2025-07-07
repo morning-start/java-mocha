@@ -7,7 +7,7 @@ from typing_extensions import Annotated
 from core import log
 from core.style import show_table, show_tree
 from core.type import SupportTerm
-from func.config import Config, check_java_home, init_config, load_jvm
+from func.config import Config, check_java_home, init_config
 from func.install import full_install_process
 from func.list import list_local_jdk, list_publish_version, list_publisher, list_version
 from func.query import query_info, query_info_term, query_info_version
@@ -53,7 +53,7 @@ def config(
         ),
     ] = None,
 ):
-    jvm_root = load_jvm()
+    jvm_root = Config.load_jvm()
     java_home = init_config(jvm_root, jdk_home, cache_home, proxy)
     log.info("Config saved successfully.")
     if not check_java_home(jvm_root):
@@ -62,8 +62,7 @@ def config(
 
 @app.command(help="Sync the Foojay JDK data to local JSON files.")
 def sync():
-    jvm_root = load_jvm()
-    cfg = Config.load(jvm_root)
+    cfg = Config.load()
     proxies = None
     if cfg.proxy:
         log.info(f"Syncing data from Foojay with proxy {cfg.proxy}")
@@ -80,8 +79,7 @@ def list(
         bool, typer.Option(..., "--version", "-v", help="Version flag")
     ] = False,
 ):
-    jvm_root = load_jvm()
-    cfg = Config.load(jvm_root)
+    cfg = Config.load()
     # 都为 False 时，列出本地jdk信息 publisher@version
     if not publisher and not version:
         jdks = list_local_jdk(cfg.jdk_home)
@@ -125,8 +123,7 @@ def query(
         typer.Option(..., "--term_of_support", "-t", help="Term of support"),
     ] = None,
 ):
-    jvm_root = load_jvm()
-    cfg = Config.load(jvm_root)
+    cfg = Config.load()
     if term_of_support and major_version:
         log.error("term_of_support and major_version can not be used at the same time")
     elif major_version:
@@ -160,8 +157,7 @@ def install(
         typer.Option(..., "--force", "-f", help="Force install"),
     ] = False,
 ):
-    jvm_root = load_jvm()
-    cfg = Config.load(jvm_root)
+    cfg = Config.load()
     try:
         full_install_process(jdk, cfg, force)
     except Exception as e:
@@ -182,8 +178,7 @@ def use(
         ),
     ],
 ):
-    jvm_root = load_jvm()
-    cfg = Config.load(jvm_root)
+    cfg = Config.load()
     res = switch_jdk(jdk, cfg)
     if res:
         log.info(f"JDK switched to {jdk}.")
@@ -203,8 +198,7 @@ def uninstall(
         ),
     ],
 ):
-    jvm_root = load_jvm()
-    cfg = Config.load(jvm_root)
+    cfg = Config.load()
     res = uninstall_jdk(jdk, cfg)
     if res:
         log.info(f"JDK {jdk} uninstalled successfully.")
