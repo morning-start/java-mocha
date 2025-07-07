@@ -1,7 +1,15 @@
+import os
 from pathlib import Path
 from typing import NamedTuple
 
 from core.utils import load_json, save_json
+
+
+def load_jvm() -> Path:
+    jvm_root = Path.home() / ".java-mocha"
+    if "JVM_ROOT" in os.environ:
+        jvm_root = Path(os.environ["JVM_ROOT"])
+    return jvm_root
 
 
 class Config(NamedTuple):
@@ -20,7 +28,7 @@ class Config(NamedTuple):
         return self.__repr__()
 
     def to_dict(self) -> dict[str, str | Path]:
-        return self.__dict__()
+        return self._asdict()
 
     def to_json(self):
         return {
@@ -105,3 +113,10 @@ def init_config(
     cfg = Config.from_json(cfg_dict)
     cfg.init_path()
     cfg.save()
+
+
+def check_java_home(jvm_root: Path):
+    java_home = jvm_root / "current"
+    java_home_env = os.environ.get("JAVA_HOME")
+    java_home_env = Path(java_home_env)
+    return java_home_env == java_home

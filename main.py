@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from typing import Optional
 
@@ -8,11 +7,13 @@ from typing_extensions import Annotated
 from core import log
 from core.style import show_table, show_tree
 from core.type import SupportTerm
-from func.config import Config, init_config
+from func.config import Config, check_java_home, init_config, load_jvm
 from func.install import full_install_process
 from func.list import list_local_jdk, list_publish_version, list_publisher, list_version
 from func.query import query_info, query_info_term, query_info_version
 from func.sync import sync_data
+from func.uninstall import uninstall_jdk
+from func.use import switch_jdk
 
 app = typer.Typer(
     no_args_is_help=True,
@@ -27,14 +28,9 @@ app = typer.Typer(
 )
 
 
-def load_jvm() -> Path:
-    jvm_root = Path.home() / ".java-mocha"
-    if "JVM_ROOT" in os.environ:
-        jvm_root = Path(os.environ["JVM_ROOT"])
-    return jvm_root
-
-
-@app.command(help="Configure the JDK directory, and cache directory for Java Mocha.")
+@app.command(
+    help="Configure the JDK directory, and cache directory for Java Mocha.",
+)
 def config(
     jdk_home: Annotated[
         Optional[Path],
@@ -58,8 +54,10 @@ def config(
     ] = None,
 ):
     jvm_root = load_jvm()
-    init_config(jvm_root, jdk_home, cache_home, proxy)
+    java_home = init_config(jvm_root, jdk_home, cache_home, proxy)
     log.info("Config saved successfully.")
+    if not check_java_home(jvm_root):
+        log.warning(f"Please set JAVA_HOME to {java_home} manually.")
 
 
 @app.command(help="Sync the Foojay JDK data to local JSON files.")
@@ -177,7 +175,9 @@ def install(
 
 @app.command(
     help="Switch JAVA_HOME environment variable.",
-    epilog="Before using, please view local jdk version via `jvm list` command. ",
+    epilog="""Before using, \n
+    1. please view local jdk version via `jvm list` command.\n
+    2. set JAVA_HOME = JVM_ROOT/current """,
 )
 def use(
     jdk: Annotated[
@@ -190,7 +190,13 @@ def use(
         ),
     ],
 ):
-    pass
+    jvm_root = load_jvm()
+    cfg = Config.load(jvm_root)
+    res = switch_jdk(jdk, cfg)
+    if res:
+        log.info(f"JDK switched to {jdk}.")
+    else:
+        log.error(f"JDK {jdk} not found.")
 
 
 @app.command(
@@ -202,13 +208,19 @@ def uninstall(
         str,
         typer.Option(
             ...,
-            "--jdk",
-            "-j",
+            "--publisher@version",
+            "-jdk",
             help="The JDK version format as publisher@version e.g. oracle@11",
         ),
     ],
 ):
-    pass
+    jvm_root = load_jvm()
+    cfg = Config.load(jvm_root)
+    res = uninstall_jdk(jdk, cfg)
+    if res:
+        log.info(f"JDK {jdk} uninstalled successfully.")
+    else:
+        log.error(f"JDK {jdk} not found.")
 
 
 if __name__ == "__main__":
