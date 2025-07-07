@@ -110,7 +110,7 @@ def init_config(
 
     # 如果有config
     if (jvm_root / "config.json").exists():
-        cfg_dict.update(Config.load(jvm_root).to_dict())
+        cfg_dict.update(Config.load().to_dict())
 
     # 根据参数更新
     if jdk_home:

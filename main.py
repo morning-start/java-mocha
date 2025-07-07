@@ -56,10 +56,10 @@ def config(
     ] = None,
 ):
     jvm_root = Config.load_jvm()
-    java_home = init_config(jvm_root, jdk_home, cache_home, proxy)
+    init_config(jvm_root, jdk_home, cache_home, proxy)
     log.info("Config saved successfully.")
     if not check_java_home(jvm_root):
-        log.warning(f"Please set JAVA_HOME to {java_home} manually.")
+        log.warning(f"Please set JAVA_HOME to {jvm_root / "current"} manually.")
 
 
 @app.command(help="Sync the Foojay JDK data to local JSON files.")
