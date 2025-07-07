@@ -1,6 +1,11 @@
 
 ## 变更日志 (Changelog)
 
+### 版本 1.1.0 (2025-07-07)
+- feat: 添加对Oracle OpenJDK的支持并改进错误处理
+- feat(install): 支持安装长期支持版本的 JDK
+- feat(install): 添加跳过验证的功能
+
 ### 版本 1.0.2 (2025-07-07)
 - feat(config): 重构配置管理并更新 JAVA_HOME 设置
 - docs(README): 添加 scoop 安装支持
