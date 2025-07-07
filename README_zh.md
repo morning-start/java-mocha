@@ -5,6 +5,12 @@ Java-Mocha 是一个基于 Foojay API 开发的 Java 版本管理工具，支持
 
 > 目前仅适配oracle，需要支持更多JDK厂商或者有其他改进可以提issue
 
+支持 scoop 集成
+
+```
+scoop bucket add code https://github.com/morning-start/code-bucket
+```
+
 ## 功能特性
 - **配置管理**：可配置 JDK 目录、缓存目录和代理服务器。
 - **数据同步**：从 Foojay 同步 JDK 数据到本地 JSON 文件。
