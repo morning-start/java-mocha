@@ -1,4 +1,5 @@
 # 将 dist/*打包为一个压缩包文件，根据系统类型，后缀名不同
+import os
 import platform
 import subprocess
 import tarfile
@@ -27,7 +28,7 @@ def compress_files(folder: Path, export: Path, app_name: str, version: str):
 
 APP_NAME = "jvm"
 ICON = "logo.ico"
-VERSION = "1.0.0"
+VERSION = os.environ.get("TAG_NAME").strip().strip("v")
 # 构建 pyinstaller 命令
 cmd = [
     "pyinstaller",
