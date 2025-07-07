@@ -4,6 +4,14 @@ Java-Mocha is a Java version management tool developed based on the Foojay API. 
 
 > Currently, it only supports Oracle. If you need to support more JDK vendors or have other improvements, please submit an issue.
 
+
+Support scoop
+
+```
+scoop bucket add code https://github.com/morning-start/code-bucket
+scoop install code/jvm
+```
+
 ## Features
 - **Configuration Management**: Configure JDK directories, cache directories, and proxy servers.
 - **Data Synchronization**: Synchronize JDK data from Foojay to a local JSON file.

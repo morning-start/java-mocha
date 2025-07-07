@@ -9,6 +9,7 @@ Java-Mocha 是一个基于 Foojay API 开发的 Java 版本管理工具，支持
 
 ```
 scoop bucket add code https://github.com/morning-start/code-bucket
+scoop install code/jvm
 ```
 
 ## 功能特性
