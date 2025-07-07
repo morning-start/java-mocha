@@ -1,11 +1,11 @@
 from pathlib import Path
 
-from core.handler import JSONDataHandler
+from core.handler import DocumentHandler
 from core.type import DataFile, SupportTerm
 
 
 def query_info(data_dir: Path, publisher: str):
-    handler = JSONDataHandler.load_data(data_dir / DataFile.PACKAGES.value)
+    handler = DocumentHandler.load_data(data_dir / DataFile.PACKAGES.value)
     fields = [
         "distribution",
         "major_version",
@@ -30,7 +30,7 @@ def query_info(data_dir: Path, publisher: str):
 
 
 def query_info_version(data_dir: Path, publisher: str, major_version: int):
-    handler = JSONDataHandler.load_data(data_dir / DataFile.PACKAGES.value)
+    handler = DocumentHandler.load_data(data_dir / DataFile.PACKAGES.value)
     fields = [
         "distribution",
         "major_version",
@@ -55,7 +55,7 @@ def query_info_version(data_dir: Path, publisher: str, major_version: int):
 
 
 def query_info_term(data_dir: Path, publisher: str, term_of_support: SupportTerm):
-    handler = JSONDataHandler.load_data(data_dir / DataFile.PACKAGES.value)
+    handler = DocumentHandler.load_data(data_dir / DataFile.PACKAGES.value)
     fields = [
         "distribution",
         "major_version",

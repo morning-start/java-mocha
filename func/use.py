@@ -1,5 +1,3 @@
-import os
-
 from func.config import Config
 
 
@@ -10,8 +8,11 @@ def switch_jdk(jdk: str, cfg: Config):
     # 软连接
     if jdk_path.exists():
         if java_home.exists():
-            os.remove(java_home)
-        os.symlink(jdk_path, java_home)
+            if java_home.is_dir():
+                java_home.rmdir()
+            else:
+                java_home.unlink()
+        java_home.symlink_to(jdk_path, True)
         return True
     else:
         return False

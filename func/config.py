@@ -7,8 +7,7 @@ from core.utils import load_json, save_json
 
 def load_jvm() -> Path:
     jvm_root = Path.home() / ".java-mocha"
-    if "JVM_ROOT" in os.environ:
-        jvm_root = Path(os.environ["JVM_ROOT"])
+    jvm_root = Path(os.getenv("JVM_ROOT", jvm_root))
     return jvm_root
 
 
@@ -117,6 +116,5 @@ def init_config(
 
 def check_java_home(jvm_root: Path):
     java_home = jvm_root / "current"
-    java_home_env = os.environ.get("JAVA_HOME")
-    java_home_env = Path(java_home_env)
+    java_home_env = Path(os.getenv("JAVA_HOME", ""))
     return java_home_env == java_home

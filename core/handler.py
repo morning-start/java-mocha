@@ -7,7 +7,7 @@ ItemType = Dict[str, EleType]
 JSONType = List[ItemType]
 
 
-class JSONDataHandler:
+class DocumentHandler:
     def __init__(self, doc: JSONType):
         self.document = doc
 
@@ -23,7 +23,7 @@ class JSONDataHandler:
         """
         if key is None or value is None:
             return self
-        return JSONDataHandler(
+        return DocumentHandler(
             [item for item in self.document if item.get(key) == value]
         )
 
@@ -67,7 +67,7 @@ class JSONDataHandler:
 
     def filter(self, condition: Callable[[ItemType], bool]):
         """过滤功能"""
-        return JSONDataHandler([item for item in self.document if condition(item)])
+        return DocumentHandler([item for item in self.document if condition(item)])
 
     def get_specific_fields(self, fields: List[str]):
         """
@@ -78,7 +78,7 @@ class JSONDataHandler:
         for item in self.document:
             new_item = {k: v for k, v in item.items() if k in fields}
             result.append(new_item)
-        return JSONDataHandler(result)
+        return DocumentHandler(result)
 
     def group_by(
         self,
@@ -122,4 +122,4 @@ class JSONDataHandler:
                     if k != key:
                         group[k] = agg_map(v)
 
-        return JSONDataHandler(list(grouped_data.values()))
+        return DocumentHandler(list(grouped_data.values()))

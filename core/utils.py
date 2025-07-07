@@ -6,6 +6,27 @@ import zipfile
 from pathlib import Path
 
 
+def move_and_clean_subfolder(target_folder: Path):
+    """
+    检测指定文件夹下是否只有一个文件夹，如果是，则将子文件夹的所有内容移动到指定文件夹，然后删除子文件夹。
+    """
+    folders = [item for item in target_folder.iterdir() if item.is_dir()]
+
+    if len(folders) == 1:
+        subfolder_path = folders[0]
+        for item in subfolder_path.iterdir():
+            dst = target_folder / item.name
+            if dst.exists():
+                if dst.is_dir():
+                    dst.rmdir()
+                else:
+                    dst.unlink()
+            item.replace(dst)
+        subfolder_path.rmdir()
+
+    return len(folders) == 1
+
+
 def extract_zip(zip_file: Path, target_folder: Path):
     """
     解压缩zip文件到指定文件夹
@@ -56,7 +77,3 @@ def load_json(file_name) -> list | dict:
 def mk_sure(path: str):
     Path(path).mkdir(parents=True, exist_ok=True)
     return Path(path)
-
-
-def mk_symlink(src: str, dst: str, is_dir: bool = True):
-    Path(dst).symlink_to(src, is_dir)

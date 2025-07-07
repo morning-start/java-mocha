@@ -113,9 +113,7 @@ def list(
 
 @app.command(help="Query available JDKs")
 def query(
-    publisher: Annotated[
-        str, typer.Option(..., "--publisher", "-p", help="The publisher name")
-    ],
+    publisher: Annotated[str, typer.Argument(help="The publisher name")],
     major_version: Annotated[
         int,
         typer.Option(
@@ -152,10 +150,7 @@ def query(
 def install(
     jdk: Annotated[
         str,
-        typer.Option(
-            ...,
-            "--publisher@version",
-            "-jdk",
+        typer.Argument(
             help="""The JDK version format as publisher@version\n
             e.g. oracle@23, oracle@23.0.2, oracle@latest""",
         ),
@@ -182,11 +177,8 @@ def install(
 def use(
     jdk: Annotated[
         str,
-        typer.Option(
-            ...,
-            "--publisher@version",
-            "-jdk",
-            help="The JDK version format as publisher@version e.g. oracle@11",
+        typer.Argument(
+            help="The JDK version format as publisher@version e.g. oracle@11"
         ),
     ],
 ):
@@ -206,10 +198,7 @@ def use(
 def uninstall(
     jdk: Annotated[
         str,
-        typer.Option(
-            ...,
-            "--publisher@version",
-            "-jdk",
+        typer.Argument(
             help="The JDK version format as publisher@version e.g. oracle@11",
         ),
     ],

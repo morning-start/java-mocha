@@ -1,13 +1,12 @@
 from pathlib import Path
-from typing import Optional
 
 import requests
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
-from core.handler import JSONDataHandler
+from core.handler import DocumentHandler
 from core.style import download_package
 from core.type import DataFile
-from core.utils import extract_tar_gz, extract_zip, sha256sum
+from core.utils import extract_tar_gz, extract_zip, move_and_clean_subfolder, sha256sum
 from func.config import Config
 
 
@@ -20,7 +19,7 @@ def query_package_url(jdk: str, data_dir: Path):
         package url，如果未找到则返回 None
     """
     p, v = jdk.split("@")
-    handler = JSONDataHandler.load_data(data_dir / DataFile.PACKAGES.value)
+    handler = DocumentHandler.load_data(data_dir / DataFile.PACKAGES.value)
     fields = [
         "id",
         "distribution",
@@ -38,11 +37,15 @@ def query_package_url(jdk: str, data_dir: Path):
         data = data.query("latest_build_available", True)
     else:
         data = data.query("distribution_version", v)
-    link: str = data.document[0].get("links").get("pkg_info_uri")
-    return link
+    ele = data.document[0]
+    link: str = ele.get("links").get("pkg_info_uri")
+    publisher: str = ele.get("distribution")
+    version: str = ele.get("distribution_version")
+    jdk_version = f"{publisher}@{version}"
+    return link, jdk_version
 
 
-def get_package_info(url: str, proxy: str = None) -> Optional[dict]:
+def get_package_info(url: str, proxy: str = None) -> dict:
     """
     发送请求查找安装包 url 和校验和
     Args:
@@ -61,7 +64,7 @@ def get_package_info(url: str, proxy: str = None) -> Optional[dict]:
     return response.json().get("result")[0]
 
 
-def get_checksum(info: dict, proxy: str = None) -> tuple[str, str]:
+def get_checksum(info: dict, proxy: str = None):
     """
     获取校验和信息
     Args:
@@ -73,9 +76,9 @@ def get_checksum(info: dict, proxy: str = None) -> tuple[str, str]:
         proxies = {"https": proxy}
     else:
         proxies = None
-    checksum_type = info.get("checksum_type")
-    checksum = info.get("checksum")
-    checksum_uri = info.get("checksum_uri")
+    checksum_type: str = info.get("checksum_type")
+    checksum: str = info.get("checksum")
+    checksum_uri: str = info.get("checksum_uri")
     if checksum_uri:
         response = requests.get(checksum_uri, proxies=proxies)
         response.raise_for_status()
@@ -85,7 +88,7 @@ def get_checksum(info: dict, proxy: str = None) -> tuple[str, str]:
 
 def download_cache(
     info: dict, cache_home: Path, proxy: str = None, force: bool = False
-) -> Optional[Path]:
+):
     """
     下载安装包到 cache_dir 并校验和
     Args:
@@ -104,11 +107,10 @@ def download_cache(
     file_path = cache_home / file_name
     if not file_path.exists() or force:
         download_package(uri, file_path, proxies)
-    else:
-        return file_path
+    return file_path
 
 
-def check_pack(file_path: Path, checksum: str, checksum_type: str) -> bool:
+def check_pack(file_path: Path, checksum: str, checksum_type: str):
     if checksum_type == "sha256":
         checksum_ = sha256sum(file_path)
     else:
@@ -128,7 +130,7 @@ def install_jdk(file_path: Path, jdk_dir: Path):
 
 
 def full_install_process(jdk: str, cfg: Config, force: bool = False):
-    info_url = query_package_url(jdk, cfg.data_dir)
+    info_url, jdk = query_package_url(jdk, cfg.data_dir)
     with Progress(
         SpinnerColumn(),
         TextColumn("[progress.description]{task.description}"),
@@ -143,3 +145,4 @@ def full_install_process(jdk: str, cfg: Config, force: bool = False):
     if not flag:
         raise ValueError("Checksum verification failed")
     install_jdk(package_path, cfg.jdk_home / jdk)
+    move_and_clean_subfolder(cfg.jdk_home / jdk)

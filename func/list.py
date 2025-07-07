@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from core.handler import ItemType, JSONDataHandler, JSONType
+from core.handler import DocumentHandler, ItemType, JSONType
 from core.type import DataFile
 
 
@@ -19,7 +19,7 @@ def list_publisher(data_dir: Path):
     """
     获取发行版的 name、build_of_openjdk、build_of_graalvm、official_uri 和 versions 信息，versions 只显示 major 级别
     """
-    handler = JSONDataHandler.load_data(data_dir / DataFile.PUBLISHERS.value)
+    handler = DocumentHandler.load_data(data_dir / DataFile.PUBLISHERS.value)
     fields = [
         "api_parameter",
         "build_of_openjdk",
@@ -53,7 +53,7 @@ def list_version(data_dir: Path) -> JSONType:
     """
     获取版本的 name、version、release_date、support_term、download_uri、download_size、download_hash 信息
     """
-    handler = JSONDataHandler.load_data(data_dir / DataFile.VERSIONS.value)
+    handler = DocumentHandler.load_data(data_dir / DataFile.VERSIONS.value)
     fields = [
         "major_version",
         "term_of_support",
@@ -68,7 +68,7 @@ def list_version(data_dir: Path) -> JSONType:
 
 
 def list_publish_version(data_dir: Path):
-    handler = JSONDataHandler.load_data(data_dir / DataFile.PACKAGES.value)
+    handler = DocumentHandler.load_data(data_dir / DataFile.PACKAGES.value)
     fields = [
         "distribution",
         "major_version",
