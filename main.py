@@ -63,6 +63,9 @@ def config(
 ):
     jvm_root = Config.load_jvm()
     init_config(jvm_root, jdk_home, java_home, cache_home, proxy)
+    cfg = Config.load()
+    if cfg.jdk_version:
+        switch_jdk(cfg.jdk_version, cfg)
     log.info("Config saved successfully.")
     if not java_home:
         log.warning(

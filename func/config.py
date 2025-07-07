@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from typing import NamedTuple
 
-from core.utils import load_json, remove_directory, save_json
+from core.utils import load_json, save_json
 
 
 class Config(NamedTuple):
