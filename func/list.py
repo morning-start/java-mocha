@@ -1,7 +1,8 @@
 from pathlib import Path
 
 from core.handler import DocumentHandler, ItemType, JSONType
-from core.type import DataFile
+from core.type import DataFile, enum2val
+from func.sync import SUPPORTED_PUBLISHER
 
 
 def list_local_jdk(jdk_home: Path):
@@ -12,6 +13,7 @@ def list_local_jdk(jdk_home: Path):
     for item in jdk_home.iterdir():
         if item.is_dir():
             local_jdks.append(item.name)
+    local_jdks.reverse()
     return local_jdks
 
 
@@ -46,6 +48,7 @@ def list_publisher(data_dir: Path):
     publisher.map(_assemble_build)
     publisher.rename({"api_parameter": "name"})
     publisher.orderby(["name", "build", "official_uri"])
+    publisher = publisher.filter(lambda x: x["name"] in enum2val(SUPPORTED_PUBLISHER))
     return publisher.document
 
 

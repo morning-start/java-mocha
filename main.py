@@ -139,23 +139,28 @@ def query(
     ] = None,
 ):
     cfg = Config.load()
-    if term_of_support and major_version:
-        log.error("term_of_support and major_version can not be used at the same time")
-    elif major_version:
-        data = query_info_version(cfg.data_dir, publisher, major_version)
-        txt = f"JDKs for {publisher} version {major_version}"
-        table = show_table(data, txt)
-        log.info(table)
-    elif term_of_support:
-        data = query_info_term(cfg.data_dir, publisher, term_of_support)
-        txt = f"Latest JDKs for {publisher} on {term_of_support}"
-        table = show_table(data, txt)
-        log.info(table)
-    else:
-        data = query_info(cfg.data_dir, publisher)
-        txt = f"Latest JDKs for publisher {publisher}"
-        table = show_table(data, txt)
-        log.info(table)
+    try:
+        if term_of_support and major_version:
+            log.error(
+                "term_of_support and major_version can not be used at the same time"
+            )
+        elif major_version:
+            data = query_info_version(cfg.data_dir, publisher, major_version)
+            txt = f"JDKs for {publisher} version {major_version}"
+            table = show_table(data, txt)
+            log.info(table)
+        elif term_of_support:
+            data = query_info_term(cfg.data_dir, publisher, term_of_support)
+            txt = f"Latest JDKs for {publisher} on {term_of_support}"
+            table = show_table(data, txt)
+            log.info(table)
+        else:
+            data = query_info(cfg.data_dir, publisher)
+            txt = f"Latest JDKs for publisher {publisher}"
+            table = show_table(data, txt)
+            log.info(table)
+    except Exception as e:
+        log.error(f"Query failed: {e}")
 
 
 @app.command("install | i", help="Install JDKs")
@@ -171,10 +176,14 @@ def install(
         bool,
         typer.Option(..., "--force", "-f", help="Force install"),
     ] = False,
+    skip_check: Annotated[
+        bool,
+        typer.Option(..., "--skip_check", "-s", help="Skip checksum verification"),
+    ] = False,
 ):
     cfg = Config.load()
     try:
-        full_install_process(jdk, cfg, force)
+        full_install_process(jdk, cfg, force, skip_check)
     except Exception as e:
         log.error(f"Install failed: {e}")
 
@@ -193,11 +202,14 @@ def switch(
     ],
 ):
     cfg = Config.load()
-    res = switch_jdk(jdk, cfg)
-    if res:
-        log.info(f"JDK switched to {jdk}.")
-    else:
-        log.error(f"JDK {jdk} not found.")
+    try:
+        res = switch_jdk(jdk, cfg)
+        if res:
+            log.info(f"JDK switched to {jdk}.")
+        else:
+            log.error(f"JDK {jdk} not found.")
+    except Exception as e:
+        log.error(f"Switch failed: {e}")
 
 
 @app.command(
@@ -214,11 +226,14 @@ def uninstall(
     ],
 ):
     cfg = Config.load()
-    res = uninstall_jdk(jdk, cfg)
-    if res:
-        log.info(f"JDK {jdk} uninstalled successfully.")
-    else:
-        log.error(f"JDK {jdk} not found.")
+    try:
+        res = uninstall_jdk(jdk, cfg)
+        if res:
+            log.info(f"JDK {jdk} uninstalled successfully.")
+        else:
+            log.error(f"JDK {jdk} not found.")
+    except Exception as e:
+        log.error(f"Uninstall failed: {e}")
 
 
 if __name__ == "__main__":

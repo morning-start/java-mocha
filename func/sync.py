@@ -6,7 +6,7 @@ from core.foojay import Foojay
 from core.type import Architecture, ArchiveType, DataFile, Distribution, OperatingSystem
 from core.utils import save_json
 
-SUPPORTED_PUBLISHER = [Distribution.ORACLE]
+SUPPORTED_PUBLISHER = [Distribution.ORACLE, Distribution.ORACLE_OPEN_JDK]
 SUPPORTED_ARCHIVE_TYPE = [ArchiveType.TAR_GZ, ArchiveType.ZIP]
 
 

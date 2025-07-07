@@ -132,7 +132,9 @@ def install_jdk(file_path: Path, jdk_dir: Path):
         raise ValueError(f"Unsupported file type: {file_path.suffix}")
 
 
-def full_install_process(jdk: str, cfg: Config, force: bool = False):
+def full_install_process(
+    jdk: str, cfg: Config, force: bool = False, skip_check: bool = False
+):
     info_url, jdk = query_package_url(jdk, cfg.data_dir)
     with Progress(
         SpinnerColumn(),
@@ -144,8 +146,9 @@ def full_install_process(jdk: str, cfg: Config, force: bool = False):
         progress.add_task(description="Get checksum...")
         checksum_type, checksum = get_checksum(info, cfg.proxy)
     package_path = download_cache(info, cfg.cache_home, cfg.proxy, force)
-    flag = check_pack(package_path, checksum, checksum_type)
-    if not flag:
-        raise ValueError("Checksum verification failed")
+    if not skip_check:
+        flag = check_pack(package_path, checksum, checksum_type)
+        if not flag:
+            raise ValueError("Checksum verification failed")
     install_jdk(package_path, cfg.jdk_home / jdk)
     move_and_clean_subfolder(cfg.jdk_home / jdk)
