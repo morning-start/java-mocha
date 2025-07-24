@@ -1,0 +1,9 @@
+{
+    "files.exclude": {
+        "Cargo.lock": true
+    },
+    "cSpell.words": [
+        "distro",
+        "foojay"
+    ]
+}
