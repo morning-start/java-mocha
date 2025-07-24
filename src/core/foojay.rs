@@ -3,7 +3,7 @@ use reqwest::header::HeaderMap;
 use std::collections::HashMap;
 use std::time::Duration;
 
-use crate::core::datatype::Distribution;
+use crate::core::datatype::{Distribution, PackVersion, VersionType};
 
 pub struct FooJay {
     pub distributions: String,
@@ -101,5 +101,41 @@ impl FooJay {
 
         // 返回值
         self.get(&url, Some(&params)).await
+    }
+    pub async fn search_versions(
+        &self,
+        version: Option<i8>,
+        version_definition: Option<VersionType>,
+        include_versions: Option<bool>,
+    ) -> Result<serde_json::Value, reqwest::Error> {
+        let include_versions = include_versions.unwrap_or(false);
+        let mut url = self.versions.clone();
+        if version.is_some() {
+            url = format!(
+                "{}/{}/{}/{}",
+                &self.versions,
+                "versions",
+                version.as_ref().unwrap(),
+                "ga"
+            );
+        }
+        if version_definition.is_some() {
+            url = format!(
+                "{}/{}",
+                &self.versions,
+                version_definition.as_ref().unwrap().as_ref()
+            );
+        }
+        let mut params = HashMap::new();
+        params.insert("include_versions".to_string(), include_versions.to_string());
+        self.get(&url, Some(&params)).await
+    }
+    pub async fn search_packages(
+        &self,
+        version: Option<String>,
+        version_by_definition: Option<PackVersion>,
+        jdk_version: Option<i8>,
+        distribution: Option<Vec<Distribution>>,
+    ) {
     }
 }

@@ -1,5 +1,9 @@
+use std::str::FromStr;
+
 use strum_macros::{AsRefStr, Display};
 // cSpell: disable
+
+// ANCHOR Distribution
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Display, AsRefStr)]
 pub enum Distribution {
     #[strum(serialize = "aoj")]
@@ -94,4 +98,115 @@ pub enum Distribution {
 
     #[strum(serialize = "zulu")]
     ZULU,
+}
+
+// ANCHOR VersionType
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Display, AsRefStr)]
+pub enum VersionType {
+    #[strum(serialize = "latest_ea")]
+    LatestEA,
+    #[strum(serialize = "latest_ga")]
+    LatestGA,
+    #[strum(serialize = "latest_sts")]
+    LatestSTS,
+    #[strum(serialize = "latest_mts")]
+    LatestMTS,
+    #[strum(serialize = "latest_lts")]
+    LatestLTS,
+    #[strum(serialize = "useful")]
+    Useful,
+}
+
+// ANCHOR PackVersion
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Display, AsRefStr)]
+pub enum PackVersion {
+    #[strum(serialize = "latest")]
+    Latest,
+    #[strum(serialize = "latest_sts")]
+    LatestSTS,
+    #[strum(serialize = "latest_mts")]
+    LatestMTS,
+    #[strum(serialize = "latest_lts")]
+    LatestLTS,
+}
+
+// ANCHOR SupportTerm
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Display, AsRefStr)]
+pub enum SupportTerm {
+    #[strum(serialize = "sts")]
+    STS,
+    #[strum(serialize = "mts")]
+    MTS,
+    #[strum(serialize = "lts")]
+    LTS,
+}
+
+// ANCHOR Architecture
+#[derive(Debug, Clone, Copy, PartialEq, Eq, AsRefStr)]
+pub enum Architecture {
+    Arm32,
+    Arm64,
+    Amd64,
+    I386,
+    Mips,
+    Ppc,
+    Ppc64,
+    Riscv64,
+    S390,
+    S390x,
+    Sparc,
+    Sparcv9,
+}
+
+impl Architecture {
+    /// 获取当前架构的所有别名
+    pub fn aliases(&self) -> &'static [&'static str] {
+        match self {
+            Self::Arm32 => &["aarch32", "arm32", "arm"],
+            Self::Arm64 => &["aarch64", "arm64"],
+            Self::Amd64 => &["amd64", "x64", "x86-64"],
+            Self::I386 => &["i386", "x86", "x86-32", "i486", "i586", "i686"],
+            Self::Mips => &["mips"],
+            Self::Ppc => &["ppc"],
+            Self::Ppc64 => &["ppc64", "ppc64le", "ppc64el"],
+            Self::Riscv64 => &["riscv64"],
+            Self::S390 => &["s390"],
+            Self::S390x => &["s390x"],
+            Self::Sparc => &["sparc"],
+            Self::Sparcv9 => &["sparcv9"],
+        }
+    }
+
+    /// 获取所有架构枚举值
+    pub fn all() -> &'static [Self] {
+        &[
+            Self::Arm32,
+            Self::Arm64,
+            Self::Amd64,
+            Self::I386,
+            Self::Mips,
+            Self::Ppc,
+            Self::Ppc64,
+            Self::Riscv64,
+            Self::S390,
+            Self::S390x,
+            Self::Sparc,
+            Self::Sparcv9,
+        ]
+    }
+}
+
+impl FromStr for Architecture {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let s = s.to_lowercase();
+        // 遍历所有架构及其别名进行匹配
+        for arch in Self::all() {
+            if arch.aliases().contains(&s.as_str()) {
+                return Ok(*arch);
+            }
+        }
+        Err(format!("Unknown architecture: {}", s))
+    }
 }
