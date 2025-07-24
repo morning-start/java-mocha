@@ -3,8 +3,67 @@ use reqwest::header::HeaderMap;
 use std::collections::HashMap;
 use std::time::Duration;
 
-use crate::core::datatype::{Distribution, PackVersion, VersionType};
+use crate::core::datatype::{
+    Architecture, ArchiveType, Distribution, OperatingSystem, PackVersion, PkgType, SupportTerm,
+    VersionType,
+};
 
+#[derive(Debug, Clone, Default)]
+pub struct UrlParams {
+    inner: HashMap<String, String>,
+}
+
+impl UrlParams {
+    // 构造函数
+    pub fn new() -> Self {
+        Self {
+            inner: HashMap::new(),
+        }
+    }
+
+    pub fn add(&mut self, key: &str, value: &dyn ToString) -> Option<String> {
+        self.inner.insert(key.to_string(), value.to_string())
+    }
+    pub fn remove(&mut self, key: &str) -> Option<String> {
+        self.inner.remove(key)
+    }
+    pub fn set(&mut self, key: &str, value: &dyn ToString) -> Option<String> {
+        self.inner.insert(key.to_string(), value.to_string())
+    }
+    pub fn get(&self, key: &str) -> Option<&String> {
+        self.inner.get(key)
+    }
+    pub fn add_iterable<I, V: ToString>(&mut self, iterable: I, key: &str)
+    where
+        I: IntoIterator<Item = V>,
+    {
+        iterable.into_iter().for_each(|v| {
+            self.inner.insert(key.to_string(), v.to_string());
+        });
+    }
+    pub fn add_optional<T: ToString>(&mut self, key: &str, value: Option<T>) {
+        if value.is_some() {
+            self.inner
+                .insert(key.to_string(), value.unwrap().to_string());
+        }
+    }
+}
+impl UrlParams {
+    // 从HashMap初始化
+    pub fn from_hashmap(map: HashMap<String, String>) -> Self {
+        Self { inner: map }
+    }
+
+    // 转换回HashMap
+    pub fn into_hashmap(self) -> HashMap<String, String> {
+        self.inner
+    }
+
+    // 批量插入
+    pub fn extend(&mut self, other: impl IntoIterator<Item = (String, String)>) {
+        self.inner.extend(other);
+    }
+}
 pub struct FooJay {
     pub distributions: String,
     pub versions: String,
@@ -76,8 +135,11 @@ impl FooJay {
         include_synonyms: Option<bool>,
     ) -> Result<serde_json::Value, reqwest::Error> {
         // 默认值
+        let mut params = UrlParams::new();
         let include_versions = include_versions.unwrap_or(false);
         let include_synonyms = include_synonyms.unwrap_or(false);
+        params.add("include_versions", &include_versions);
+        params.add("include_synonyms", &include_synonyms);
 
         let mut url = self.distributions.clone();
 
@@ -95,12 +157,9 @@ impl FooJay {
                 distro_name.as_ref().unwrap().as_ref()
             );
         }
-        let mut params = HashMap::new();
-        params.insert("include_versions".to_string(), include_versions.to_string());
-        params.insert("include_synonyms".to_string(), include_synonyms.to_string());
 
         // 返回值
-        self.get(&url, Some(&params)).await
+        self.get(&url, Some(&params.into_hashmap())).await
     }
     pub async fn search_versions(
         &self,
@@ -126,9 +185,9 @@ impl FooJay {
                 version_definition.as_ref().unwrap().as_ref()
             );
         }
-        let mut params = HashMap::new();
-        params.insert("include_versions".to_string(), include_versions.to_string());
-        self.get(&url, Some(&params)).await
+        let mut params = UrlParams::new();
+        params.add("include_versions", &include_versions);
+        self.get(&url, Some(&params.into_hashmap())).await
     }
     pub async fn search_packages(
         &self,
@@ -136,6 +195,42 @@ impl FooJay {
         version_by_definition: Option<PackVersion>,
         jdk_version: Option<i8>,
         distribution: Option<Vec<Distribution>>,
-    ) {
+        architecture: Option<Architecture>,
+        operating_system: Option<OperatingSystem>,
+        archive_type: Option<Vec<ArchiveType>>,
+        package_type: Option<PkgType>,
+        term_of_support: Option<SupportTerm>,
+        include_versions: Option<bool>,
+        javafx_bundled: Option<bool>,
+        free_to_use_in_production: Option<bool>,
+    ) -> Result<serde_json::Value, reqwest::Error> {
+        let mut params = UrlParams::new();
+        // single value
+        let include_versions = include_versions.unwrap_or(true);
+        let free_to_use_in_production = free_to_use_in_production.unwrap_or(true);
+        let term_of_support = term_of_support.unwrap_or(SupportTerm::LTS);
+        let javafx_bundled = javafx_bundled.unwrap_or(false);
+        params.add("term_of_support", &term_of_support);
+        params.add("include_versions", &include_versions);
+        params.add("free_to_use_in_production", &free_to_use_in_production);
+        params.add("javafx_bundled", &javafx_bundled);
+
+        // iterable
+        let distribution = distribution.unwrap_or(vec![]);
+        let architecture = architecture.unwrap_or(Architecture::get_local_arch());
+        let archive_type = archive_type.unwrap_or(vec![ArchiveType::Zip]);
+        let operating_system = operating_system.unwrap_or(OperatingSystem::get_local_os());
+        params.add_iterable(distribution, "distribution");
+        params.add_iterable(architecture.aliases(), "architecture");
+        params.add_iterable(archive_type, "archive_type");
+        params.add_iterable(operating_system.aliases(), "operating_system");
+
+        // not sure
+        params.add_optional("package_type", package_type);
+        params.add_optional("version", version);
+        params.add_optional("version_by_definition", version_by_definition);
+        params.add_optional("jdk_version", jdk_version);
+
+        self.get(&self.packages, Some(&params.into_hashmap())).await
     }
 }

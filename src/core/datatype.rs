@@ -194,6 +194,13 @@ impl Architecture {
             Self::Sparcv9,
         ]
     }
+
+    // 获取本机架构
+    pub fn get_local_arch() -> Self {
+        let arch = std::env::consts::ARCH;
+        let arch = Self::from_str(arch).unwrap();
+        arch
+    }
 }
 
 impl FromStr for Architecture {
@@ -209,4 +216,96 @@ impl FromStr for Architecture {
         }
         Err(format!("Unknown architecture: {}", s))
     }
+}
+
+// ANCHOR OperatingSystem
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Display, AsRefStr)]
+pub enum OperatingSystem {
+    AIX,
+    LINUX,
+    MACOS,
+    QNX,
+    SOLARIS,
+    WINDOWS,
+}
+
+impl OperatingSystem {
+    pub fn aliases(&self) -> &'static [&'static str] {
+        match self {
+            Self::AIX => &["aix"],
+            Self::LINUX => &["linux", "alpine_linux", "linux_musl"],
+            Self::MACOS => &["macos"],
+            Self::QNX => &["qnx"],
+            Self::SOLARIS => &["solaris"],
+            Self::WINDOWS => &["windows"],
+        }
+    }
+
+    pub fn all() -> &'static [Self] {
+        &[
+            Self::AIX,
+            Self::LINUX,
+            Self::MACOS,
+            Self::QNX,
+            Self::SOLARIS,
+            Self::WINDOWS,
+        ]
+    }
+    pub fn get_local_os() -> Self {
+        let sys_os = std::env::consts::OS;
+        let os = Self::from_str(sys_os).unwrap();
+        os
+    }
+}
+impl FromStr for OperatingSystem {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let s = s.to_lowercase();
+        // 遍历所有操作系统及其别名进行匹配
+        for os in Self::all() {
+            if os.aliases().contains(&s.as_str()) {
+                return Ok(*os);
+            }
+        }
+        Err(format!("Unknown operating system: {}", s))
+    }
+}
+
+// ANCHOR ArchiveType
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Display, AsRefStr)]
+pub enum ArchiveType {
+    #[strum(serialize = "apk")]
+    Apk,
+    #[strum(serialize = "cab")]
+    Cab,
+    #[strum(serialize = "deb")]
+    Deb,
+    #[strum(serialize = "dmg")]
+    Dmg,
+    #[strum(serialize = "exe")]
+    Exe,
+    #[strum(serialize = "msi")]
+    Msi,
+    #[strum(serialize = "pkg")]
+    Pkg,
+    #[strum(serialize = "rpm")]
+    Rpm,
+    #[strum(serialize = "tar")]
+    Tar,
+    #[strum(serialize = "tar.gz")]
+    TarGz,
+    #[strum(serialize = "tgz")]
+    Tgz,
+    #[strum(serialize = "zip")]
+    Zip,
+}
+
+// ANCHOR PkgType
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Display, AsRefStr)]
+pub enum PkgType {
+    #[strum(serialize = "jdk")]
+    Jdk,
+    #[strum(serialize = "jre")]
+    Jre,
 }
