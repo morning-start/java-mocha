@@ -69,7 +69,9 @@ impl FooJay {
         // 再次使用 `await?` 处理异步解析和错误传播
         let json: serde_json::Value = response.json().await?;
 
-        Ok(json)
+        // 从 JSON 中提取 "result" 字段
+        let result = json["result"].clone();
+        Ok(result)
     }
     pub async fn search_distributions(
         &self,
