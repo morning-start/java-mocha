@@ -2,68 +2,12 @@ use reqwest::Client;
 use reqwest::header::HeaderMap;
 use std::collections::HashMap;
 use std::time::Duration;
-
+use crate::core::utils::UrlParams;
 use crate::core::datatype::{
     Architecture, ArchiveType, Distribution, OperatingSystem, PackVersion, PkgType, SupportTerm,
     VersionType,
 };
 
-#[derive(Debug, Clone, Default)]
-pub struct UrlParams {
-    inner: HashMap<String, String>,
-}
-
-impl UrlParams {
-    // 构造函数
-    pub fn new() -> Self {
-        Self {
-            inner: HashMap::new(),
-        }
-    }
-
-    pub fn add(&mut self, key: &str, value: &dyn ToString) -> Option<String> {
-        self.inner.insert(key.to_string(), value.to_string())
-    }
-    pub fn remove(&mut self, key: &str) -> Option<String> {
-        self.inner.remove(key)
-    }
-    pub fn set(&mut self, key: &str, value: &dyn ToString) -> Option<String> {
-        self.inner.insert(key.to_string(), value.to_string())
-    }
-    pub fn get(&self, key: &str) -> Option<&String> {
-        self.inner.get(key)
-    }
-    pub fn add_iterable<I, V: ToString>(&mut self, iterable: I, key: &str)
-    where
-        I: IntoIterator<Item = V>,
-    {
-        iterable.into_iter().for_each(|v| {
-            self.inner.insert(key.to_string(), v.to_string());
-        });
-    }
-    pub fn add_optional<T: ToString>(&mut self, key: &str, value: Option<T>) {
-        if value.is_some() {
-            self.inner
-                .insert(key.to_string(), value.unwrap().to_string());
-        }
-    }
-}
-impl UrlParams {
-    // 从HashMap初始化
-    pub fn from_hashmap(map: HashMap<String, String>) -> Self {
-        Self { inner: map }
-    }
-
-    // 转换回HashMap
-    pub fn into_hashmap(self) -> HashMap<String, String> {
-        self.inner
-    }
-
-    // 批量插入
-    pub fn extend(&mut self, other: impl IntoIterator<Item = (String, String)>) {
-        self.inner.extend(other);
-    }
-}
 pub struct FooJay {
     pub distributions: String,
     pub versions: String,
