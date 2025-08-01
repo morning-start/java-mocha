@@ -2,19 +2,18 @@ use serde_json::Value;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Write;
+use std::path::Path;
 
-
-pub fn save_json(json: &Value, file_path: &str) -> Result<(), Box<dyn std::error::Error>> {
+pub fn save_json(json: &Value, file_path: &Path) -> Result<(), Box<dyn std::error::Error>> {
     let mut file = File::create(file_path)?;
     file.write_all(serde_json::to_string_pretty(json)?.as_bytes())?;
     Ok(())
 }
 
-pub fn load_json(file_path: &str) -> Result<Value, Box<dyn std::error::Error>> {
+pub fn load_json(file_path: &Path) -> Result<Value, Box<dyn std::error::Error>> {
     let json = serde_json::from_str(&std::fs::read_to_string(file_path)?)?;
     Ok(json)
 }
-
 
 #[derive(Debug, Clone, Default)]
 pub struct UrlParams {
@@ -72,4 +71,3 @@ impl UrlParams {
         self.inner.extend(other);
     }
 }
-

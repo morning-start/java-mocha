@@ -1,6 +1,6 @@
 use super::utils::load_json; // 引用项目中已有的JSON加载函数
 use serde_json::Value;
-use std::option::Option;
+use std::{option::Option, path::Path};
 
 /// JSON文档处理器，提供加载、查询和字段重命名功能
 #[derive(Debug, Clone)]
@@ -15,7 +15,7 @@ impl DocumentHandler {
     }
 
     /// 从JSON文件加载数据并创建处理器实例
-    pub fn load_data(file_path: &str) -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn load_data(file_path: &Path) -> Result<Self, Box<dyn std::error::Error>> {
         let document = load_json(file_path)?;
         Ok(Self::new(document))
     }

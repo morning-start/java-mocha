@@ -164,8 +164,8 @@ impl Architecture {
         match self {
             Self::Arm32 => &["aarch32", "arm32", "arm"],
             Self::Arm64 => &["aarch64", "arm64"],
-            Self::Amd64 => &["amd64", "x64", "x86-64"],
-            Self::I386 => &["i386", "x86", "x86-32", "i486", "i586", "i686"],
+            Self::Amd64 => &["amd64", "x64", "x86_64"],
+            Self::I386 => &["i386", "x86", "x86_32", "i486", "i586", "i686"],
             Self::Mips => &["mips"],
             Self::Ppc => &["ppc"],
             Self::Ppc64 => &["ppc64", "ppc64le", "ppc64el"],

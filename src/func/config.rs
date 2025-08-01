@@ -63,7 +63,7 @@ impl Config {
     /// 从 JVM 根目录加载配置
     pub fn load() -> Result<Self, Box<dyn std::error::Error>> {
         let config_file = Self::load_jvm().join("config.json");
-        let cfg = load_json(config_file.to_str().unwrap())?;
+        let cfg = load_json(&config_file)?;
         Self::from_json(&cfg)
     }
     
