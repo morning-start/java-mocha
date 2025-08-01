@@ -16,8 +16,6 @@ pub struct Config {
     pub cache_home: PathBuf,
     pub data_dir: PathBuf,
     #[serde(default)]
-    pub proxy: String,
-    #[serde(default)]
     pub jdk_version: String,
 }
 
@@ -50,7 +48,6 @@ impl Config {
         let java_home = PathBuf::from(json["java_home"].as_str().unwrap_or(""));
         let cache_home = PathBuf::from(json["cache_home"].as_str().unwrap_or(""));
         let data_dir = PathBuf::from(json["data_dir"].as_str().unwrap_or(""));
-        let proxy = json["proxy"].as_str().unwrap_or("").to_string();
         let jdk_version = json["jdk_version"].as_str().unwrap_or("").to_string();
         
         Ok(Self {
@@ -59,7 +56,6 @@ impl Config {
             java_home,
             cache_home,
             data_dir,
-            proxy,
             jdk_version,
         })
     }
@@ -103,7 +99,6 @@ impl Config {
         map.insert("java_home".to_string(), Value::String(self.java_home.to_string_lossy().to_string()));
         map.insert("cache_home".to_string(), Value::String(self.cache_home.to_string_lossy().to_string()));
         map.insert("data_dir".to_string(), Value::String(self.data_dir.to_string_lossy().to_string()));
-        map.insert("proxy".to_string(), Value::String(self.proxy.clone()));
         map.insert("jdk_version".to_string(), Value::String(self.jdk_version.clone()));
         map
     }
@@ -123,13 +118,11 @@ impl Config {
 /// * `jdk_home` - JDK 目录，默认为 JVM 根目录下的 `jdk` 目录。
 /// * `java_home` - JAVA_HOME 环境变量，默认为 JVM 根目录下的 `default` 目录。
 /// * `cache_home` - 缓存目录，默认为 JVM 根目录下的 `cache` 目录。
-/// * `proxy` - 代理设置，默认为空字符串。
 pub fn init_config(
     jvm_root: PathBuf,
     jdk_home: Option<PathBuf>,
     java_home: Option<PathBuf>,
     cache_home: Option<PathBuf>,
-    proxy: Option<String>,
 ) -> Result<Config, Box<dyn std::error::Error>> {
     // 默认值
     let mut cfg_dict = HashMap::new();
@@ -138,7 +131,6 @@ pub fn init_config(
     cfg_dict.insert("java_home".to_string(), jvm_root.join("default").to_string_lossy().to_string());
     cfg_dict.insert("cache_home".to_string(), jvm_root.join("cache").to_string_lossy().to_string());
     cfg_dict.insert("data_dir".to_string(), jvm_root.join("data").to_string_lossy().to_string());
-    cfg_dict.insert("proxy".to_string(), "".to_string());
     cfg_dict.insert("jdk_version".to_string(), "".to_string());
 
     // 如果有config
@@ -168,9 +160,6 @@ pub fn init_config(
         cfg_dict.insert("cache_home".to_string(), cache_home_val.to_string_lossy().to_string());
     }
     
-    if let Some(proxy_val) = proxy {
-        cfg_dict.insert("proxy".to_string(), proxy_val);
-    }
 
     // 创建配置对象
     let cfg = Config {
@@ -179,7 +168,6 @@ pub fn init_config(
         java_home: PathBuf::from(cfg_dict.get("java_home").unwrap().as_str()),
         cache_home: PathBuf::from(cfg_dict.get("cache_home").unwrap().as_str()),
         data_dir: PathBuf::from(cfg_dict.get("data_dir").unwrap().as_str()),
-        proxy: cfg_dict.get("proxy").unwrap().clone(),
         jdk_version: cfg_dict.get("jdk_version").unwrap().clone(),
     };
     
