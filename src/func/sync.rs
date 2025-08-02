@@ -4,8 +4,10 @@ use crate::core::datatype::{Architecture, ArchiveType, Distribution, OperatingSy
 use crate::core::foojay::FooJay;
 use crate::core::utils::save_json;
 use indicatif::{ProgressBar, ProgressStyle};
-const SUPPORTED_PUBLISHER: [Distribution; 2] = [Distribution::ORACLE, Distribution::OracleOpenJdk];
-const SUPPORTED_ARCHIVE_TYPE: [ArchiveType; 2] = [ArchiveType::TarGz, ArchiveType::Zip];
+
+
+pub const SUPPORTED_PUBLISHER: [Distribution; 2] = [Distribution::ORACLE, Distribution::OracleOpenJdk];
+pub const SUPPORTED_ARCHIVE_TYPE: [ArchiveType; 2] = [ArchiveType::TarGz, ArchiveType::Zip];
 
 pub async fn sync_data(cfg: &Config) {
     let foojay = FooJay::new(None, Some(false));

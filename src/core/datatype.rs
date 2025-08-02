@@ -3,6 +3,21 @@ use std::str::FromStr;
 use strum_macros::{AsRefStr, Display};
 // cSpell: disable
 
+// class DataFile(Enum):
+// PUBLISHERS = "distributions.json"
+// VERSIONS = "versions.json"
+// PACKAGES = "packages.json"
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Display, AsRefStr)]
+pub enum DataFile {
+    #[strum(serialize = "distributions.json")]
+    Distributions,
+    #[strum(serialize = "versions.json")]
+    Versions,
+    #[strum(serialize = "packages.json")]
+    Packages,
+}
+
 // ANCHOR Distribution
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Display, AsRefStr)]
 pub enum Distribution {

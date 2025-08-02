@@ -1,6 +1,6 @@
 use super::utils::load_json; // 引用项目中已有的JSON加载函数
 use serde_json::Value;
-use std::{option::Option, path::Path};
+use std::{error::Error, option::Option, path::Path};
 
 /// JSON文档处理器，提供加载、查询和字段重命名功能
 #[derive(Debug, Clone)]
@@ -15,7 +15,7 @@ impl DocumentHandler {
     }
 
     /// 从JSON文件加载数据并创建处理器实例
-    pub fn load_data(file_path: &Path) -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn load_data(file_path: &Path) -> Result<Self, Box<dyn Error>> {
         let document = load_json(file_path)?;
         Ok(Self::new(document))
     }
@@ -33,11 +33,7 @@ impl DocumentHandler {
 
 impl DocumentHandler {
     /// 根据键值对查询数据，返回新的处理器实例
-    pub fn query(
-        &self,
-        key: Option<&str>,
-        value: Option<&Value>,
-    ) -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn query(&self, key: Option<&str>, value: Option<&Value>) -> Result<Self, Box<dyn Error>> {
         // 如果未提供键或值，返回当前实例的克隆
         if key.is_none() || value.is_none() {
             return Ok(self.clone());
@@ -62,7 +58,7 @@ impl DocumentHandler {
     pub fn rename(
         &mut self,
         name_map: &std::collections::HashMap<String, String>,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<(), Box<dyn Error>> {
         // 确保文档是数组类型
         let array = self
             .document
@@ -84,7 +80,7 @@ impl DocumentHandler {
         Ok(())
     }
     /// 根据指定字段顺序重排文档中的对象字段
-    pub fn orderby(&mut self, levels: &[&str]) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn orderby(&mut self, levels: &[&str]) -> Result<(), Box<dyn Error>> {
         let array = self
             .document
             .as_array_mut()
@@ -108,7 +104,7 @@ impl DocumentHandler {
     }
 
     /// 根据指定键对文档进行排序
-    pub fn sort(&mut self, key: &str, reverse: bool) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn sort(&mut self, key: &str, reverse: bool) -> Result<(), Box<dyn Error>> {
         let array = self
             .document
             .as_array_mut()
@@ -134,7 +130,7 @@ impl DocumentHandler {
     }
 
     /// 对文档中的每个元素应用转换函数
-    pub fn map<F>(&mut self, f: F) -> Result<(), Box<dyn std::error::Error>>
+    pub fn map<F>(&mut self, f: F) -> Result<(), Box<dyn Error>>
     where
         F: Fn(Value) -> Value,
     {
@@ -151,7 +147,7 @@ impl DocumentHandler {
     }
 
     /// 对文档中指定键的值应用转换函数
-    pub fn apply<F>(&mut self, key: &str, f: F) -> Result<(), Box<dyn std::error::Error>>
+    pub fn apply<F>(&mut self, key: &str, f: F) -> Result<(), Box<dyn Error>>
     where
         F: Fn(Value) -> Value,
     {
@@ -172,7 +168,7 @@ impl DocumentHandler {
     }
 
     /// 根据条件筛选文档元素，返回新的处理器实例
-    pub fn filter<F>(&self, condition: F) -> Result<Self, Box<dyn std::error::Error>>
+    pub fn filter<F>(&self, condition: F) -> Result<Self, Box<dyn Error>>
     where
         F: Fn(&Value) -> bool,
     {
@@ -187,7 +183,7 @@ impl DocumentHandler {
     }
 
     /// 获取文档中指定字段的信息，返回新的处理器实例
-    pub fn get_specific_fields(&self, fields: &[&str]) -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn get_specific_fields(&self, fields: &[&str]) -> Result<Self, Box<dyn Error>> {
         let array = self.document.as_array().ok_or("Document is not an array")?;
         let mut new_doc = Vec::with_capacity(array.len());
 
@@ -207,65 +203,76 @@ impl DocumentHandler {
         Ok(Self::new(Value::Array(new_doc)))
     }
 
-    /// 按指定键分组文档元素，支持聚合函数处理
-    pub fn group_by<F>(
-        &self,
-        key: &str,
-        agg_map: Option<F>,
-    ) -> Result<Self, Box<dyn std::error::Error>>
+    pub fn group_by<F>(&self, key: &str, agg_map: Option<F>) -> Result<Self, Box<dyn Error>>
     where
-        F: Fn(&str, Vec<Value>) -> Value,
+        F: Fn(Vec<Value>) -> Vec<Value>,
     {
+        // 确保文档是数组类型
         let array = self.document.as_array().ok_or("Document is not an array")?;
-        let mut grouped_data = std::collections::HashMap::new();
 
-        // 分组数据
+        // 创建一个 HashMap 来存储分组后的数据
+        let mut grouped_data: std::collections::HashMap<String, serde_json::Map<String, Value>> =
+            std::collections::HashMap::new();
+
+        // 遍历数组中的每个元素
         for item in array {
+            // 确保元素是对象类型
             let obj = item.as_object().ok_or("Array element is not an object")?;
+
+            // 获取用于分组的键值
             let key_value = obj
                 .get(key)
-                .cloned()
-                .ok_or(format!("Key '{}' not found in item", key))?;
+                .ok_or(format!("Key '{}' not found in object", key))?;
+            let key_str = key_value
+                .as_str()
+                .ok_or(format!("Key '{}' is not a string", key))?
+                .to_string();
 
-            let entry = grouped_data.entry(key_value.clone()).or_insert_with(|| {
-                let mut group = serde_json::Map::new();
-                group.insert(key.to_string(), key_value);
-                group
-            });
-
-            // 收集其他字段
-            for (k, v) in obj {
-                if k != key {
-                    let values = entry
-                        .entry(k.clone())
-                        .or_insert_with(|| Value::Array(Vec::new()));
-                    if let Value::Array(arr) = values {
-                        arr.push(v.clone());
-                    }
-                }
+            // 如果键值不在分组数据中，则初始化
+            if !grouped_data.contains_key(&key_str) {
+                let mut new_group = serde_json::Map::new();
+                new_group.insert(key.to_string(), key_value.clone());
+                grouped_data.insert(key_str.clone(), new_group);
             }
-        }
 
-        // 应用聚合函数
-        if let Some(agg_func) = agg_map {
-            for group in grouped_data.values_mut() {
-                let keys: Vec<String> = group.keys().cloned().collect();
-                for k in keys {
-                    if k != key {
-                        if let Value::Array(arr) = group.remove(&k).unwrap() {
-                            let aggregated = agg_func(&k, arr);
-                            group.insert(k, aggregated);
+            // 遍历对象中的每个键值对
+            for (k, v) in obj {
+                // 跳过分组键
+                if k != key {
+                    // 如果键不在分组数据中，则初始化为空数组
+                    if !grouped_data.get(&key_str).unwrap().contains_key(k) {
+                        grouped_data
+                            .get_mut(&key_str)
+                            .unwrap()
+                            .insert(k.clone(), Value::Array(vec![]));
+                    }
+
+                    // 将值添加到数组中
+                    if let Some(arr) = grouped_data.get_mut(&key_str).unwrap().get_mut(k) {
+                        if let Some(arr) = arr.as_array_mut() {
+                            arr.push(v.clone());
                         }
                     }
                 }
             }
         }
 
-        // 转换为结果数组
-        let result: Vec<Value> = grouped_data
-            .into_iter()
-            .map(|(_, group)| Value::Object(group))
-            .collect();
+        // 如果提供了聚合函数，则应用它
+        if let Some(agg_fn) = agg_map {
+            for group in grouped_data.values_mut() {
+                for (k, v) in group.clone() {
+                    if k != key {
+                        if let Some(arr) = v.as_array() {
+                            let new_arr = agg_fn(arr.clone());
+                            group.insert(k, Value::Array(new_arr));
+                        }
+                    }
+                }
+            }
+        }
+
+        // 将分组数据转换为 Vec<Value>
+        let result: Vec<Value> = grouped_data.into_values().map(Value::Object).collect();
 
         Ok(Self::new(Value::Array(result)))
     }
