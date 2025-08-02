@@ -1,5 +1,5 @@
 use super::sync::SUPPORTED_PUBLISHER;
-use crate::core::{datatype::DataFile, handle::DocumentHandler};
+use crate::core::{datatype::DataFile, handler::DocumentHandler};
 use serde_json::Value;
 use std::{
     collections::{HashMap, HashSet},
