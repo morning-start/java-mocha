@@ -5,9 +5,7 @@ use crate::core::datatype::{
 use crate::core::utils::UrlParams;
 use reqwest::Client;
 use reqwest::header::HeaderMap;
-use serde::Serialize;
 use serde_json::Value;
-use std::collections::HashMap;
 use std::time::Duration;
 
 pub struct FooJay {

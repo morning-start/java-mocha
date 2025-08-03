@@ -8,7 +8,7 @@ indicatif = "0.18.0"
 clap = { version = "4.5.41", features = ["derive"] }
 reqwest = { version = "0.12.22", features = ["json"] }
 tokio = { version = "1.46.1", features = ["full"] }
-serde_json = "1.0.142"
+serde_json = { version = "1.0.142", features = ["preserve_order"] }
 strum = "0.27.2"
 strum_macros = "0.27.2"
 serde = { version = "1.0.219", features = ["derive"] }
