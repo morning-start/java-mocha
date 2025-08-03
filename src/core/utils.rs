@@ -1,4 +1,3 @@
-use serde::{Serialize, Serializer};
 use serde_json::Value;
 use std::fs::File;
 use std::io::Write;
@@ -14,6 +13,20 @@ pub fn load_json(file_path: &Path) -> Result<Value, Box<dyn std::error::Error>> 
     let json = serde_json::from_str(&std::fs::read_to_string(file_path)?)?;
     Ok(json)
 }
+
+
+// 创建系统链接，适配多个系统
+pub fn link(link_name: &Path, target: &Path) -> Result<(), Box<dyn std::error::Error>> {
+    if link_name.exists() {
+        std::fs::remove_file(link_name)?;
+    }
+    #[cfg(unix)]
+    std::os::unix::fs::symlink(target, link_name)?;
+    #[cfg(windows)]
+    std::os::windows::fs::symlink_dir(target, link_name)?;
+    Ok(())
+}
+
 
 #[derive(Debug, Default, Clone)]
 pub struct UrlParams {
