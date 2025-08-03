@@ -3,11 +3,6 @@ use std::str::FromStr;
 use strum_macros::{AsRefStr, Display};
 // cSpell: disable
 
-// class DataFile(Enum):
-// PUBLISHERS = "distributions.json"
-// VERSIONS = "versions.json"
-// PACKAGES = "packages.json"
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Display, AsRefStr)]
 pub enum DataFile {
     #[strum(serialize = "distributions.json")]
@@ -179,8 +174,8 @@ impl Architecture {
         match self {
             Self::Arm32 => &["aarch32", "arm32", "arm"],
             Self::Arm64 => &["aarch64", "arm64"],
-            Self::Amd64 => &["amd64", "x64", "x86_64"],
-            Self::I386 => &["i386", "x86", "x86_32", "i486", "i586", "i686"],
+            Self::Amd64 => &["amd64", "x64", "x86-64"],
+            Self::I386 => &["i386", "x86", "x86-32", "i486", "i586", "i686"],
             Self::Mips => &["mips"],
             Self::Ppc => &["ppc"],
             Self::Ppc64 => &["ppc64", "ppc64le", "ppc64el"],
@@ -213,7 +208,8 @@ impl Architecture {
     // 获取本机架构
     pub fn get_local_arch() -> Self {
         let arch = std::env::consts::ARCH;
-        let arch = Self::from_str(arch).unwrap();
+        let arch = arch.to_lowercase().replace('_', "-");
+        let arch = Self::from_str(&arch).unwrap();
         arch
     }
 }
@@ -268,7 +264,8 @@ impl OperatingSystem {
     }
     pub fn get_local_os() -> Self {
         let sys_os = std::env::consts::OS;
-        let os = Self::from_str(sys_os).unwrap();
+        let sys_os = sys_os.to_lowercase();
+        let os = Self::from_str(&sys_os).unwrap();
         os
     }
 }

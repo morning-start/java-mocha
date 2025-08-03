@@ -1,6 +1,6 @@
 use super::config::Config;
 
-use crate::core::datatype::{Architecture, ArchiveType, Distribution, OperatingSystem, PkgType};
+use crate::core::datatype::{Architecture, ArchiveType, DataFile, Distribution, OperatingSystem, PkgType};
 use crate::core::foojay::FooJay;
 use crate::core::utils::save_json;
 use indicatif::{ProgressBar, ProgressStyle};
@@ -37,8 +37,8 @@ pub async fn sync_data(cfg: &Config) {
         )
         .await
         .unwrap();
-    save_json(&packages, &cfg.data_dir.join("packages.json")).unwrap();
-    save_json(&distributions, &cfg.data_dir.join("distributions.json")).unwrap();
-    save_json(&versions, &cfg.data_dir.join("versions.json")).unwrap();
+    save_json(&packages, &cfg.data_dir.join(DataFile::Packages.as_ref())).unwrap();
+    save_json(&distributions, &cfg.data_dir.join(DataFile::Distributions.as_ref())).unwrap();
+    save_json(&versions, &cfg.data_dir.join(DataFile::Versions.as_ref())).unwrap();
     pb.finish_with_message("Finished");
 }

@@ -1,5 +1,5 @@
+use serde::{Serialize, Serializer};
 use serde_json::Value;
-use std::collections::HashMap;
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
@@ -15,59 +15,54 @@ pub fn load_json(file_path: &Path) -> Result<Value, Box<dyn std::error::Error>> 
     Ok(json)
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct UrlParams {
-    inner: HashMap<String, String>,
+    pub params: Vec<(String, String)>,
 }
 
 impl UrlParams {
-    // 构造函数
+    /// 创建一个新的空的 UrlParams 实例
     pub fn new() -> Self {
-        Self {
-            inner: HashMap::new(),
-        }
+        Self { params: Vec::new() }
     }
 
-    pub fn add(&mut self, key: &str, value: &dyn ToString) -> Option<String> {
-        self.inner.insert(key.to_string(), value.to_string())
+    /// 添加一个键值对到查询参数中
+    /// 允许同一个键出现多次
+    pub fn add(&mut self, key: &str, value: &dyn ToString) {
+        let value_str = value.to_string();
+        self.params.push((key.to_string(), value_str));
     }
-    pub fn remove(&mut self, key: &str) -> Option<String> {
-        self.inner.remove(key)
-    }
-    pub fn set(&mut self, key: &str, value: &dyn ToString) -> Option<String> {
-        self.inner.insert(key.to_string(), value.to_string())
-    }
-    pub fn get(&self, key: &str) -> Option<&String> {
-        self.inner.get(key)
-    }
+
+    /// 添加一个可迭代集合的所有元素作为值，使用指定的键
+    /// 集合中的每个元素都会被转换为字符串并作为独立的键值对添加
     pub fn add_iterable<I, V: ToString>(&mut self, iterable: I, key: &str)
     where
         I: IntoIterator<Item = V>,
     {
-        iterable.into_iter().for_each(|v| {
-            self.inner.insert(key.to_string(), v.to_string());
-        });
-    }
-    pub fn add_optional<T: ToString>(&mut self, key: &str, value: Option<T>) {
-        if value.is_some() {
-            self.inner
-                .insert(key.to_string(), value.unwrap().to_string());
+        for item in iterable {
+            self.add(key, &item);
         }
     }
-}
-impl UrlParams {
-    // 从HashMap初始化
-    pub fn from_hashmap(map: HashMap<String, String>) -> Self {
-        Self { inner: map }
+
+    /// 有条件地添加一个值到查询参数中
+    /// 只有当提供的 `Option<T>` 是 `Some(value)` 时才会添加
+    pub fn add_optional<T: ToString>(&mut self, key: &str, value: Option<T>) {
+        if let Some(val) = value {
+            self.add(key, &val);
+        }
+    }
+    /// 返回参数的数量
+    pub fn len(&self) -> usize {
+        self.params.len()
     }
 
-    // 转换回HashMap
-    pub fn into_hashmap(self) -> HashMap<String, String> {
-        self.inner
+    /// 检查是否没有任何参数
+    pub fn is_empty(&self) -> bool {
+        self.params.is_empty()
     }
 
-    // 批量插入
-    pub fn extend(&mut self, other: impl IntoIterator<Item = (String, String)>) {
-        self.inner.extend(other);
+    /// 清空所有参数
+    pub fn clear(&mut self) {
+        self.params.clear();
     }
 }
