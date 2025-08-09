@@ -15,7 +15,7 @@ pub struct Config {
     pub java_home: PathBuf,
     pub cache_home: PathBuf,
     pub data_dir: PathBuf,
-    #[serde(default)]
+    pub proxy: String,
     pub jdk_version: String,
 }
 
@@ -49,6 +49,8 @@ impl Config {
         let cache_home = PathBuf::from(json["cache_home"].as_str().unwrap_or(""));
         let data_dir = PathBuf::from(json["data_dir"].as_str().unwrap_or(""));
         let jdk_version = json["jdk_version"].as_str().unwrap_or("").to_string();
+        let proxy = json["proxy"].as_str().unwrap_or("").to_string();
+
         
         Ok(Self {
             jvm_root,
@@ -56,6 +58,7 @@ impl Config {
             java_home,
             cache_home,
             data_dir,
+            proxy,
             jdk_version,
         })
     }
@@ -168,6 +171,7 @@ pub fn init_config(
         java_home: PathBuf::from(cfg_dict.get("java_home").unwrap().as_str()),
         cache_home: PathBuf::from(cfg_dict.get("cache_home").unwrap().as_str()),
         data_dir: PathBuf::from(cfg_dict.get("data_dir").unwrap().as_str()),
+        proxy: cfg_dict.get("proxy").unwrap().clone(),
         jdk_version: cfg_dict.get("jdk_version").unwrap().clone(),
     };
     

@@ -39,15 +39,28 @@ pub fn switch_jdk(jdk: &str, cfg: &Config) -> Result<bool, Box<dyn std::error::E
         return Ok(false);
     }
     
-    // Remove the existing java_home symlink or directory
+    // 清理现有的 java_home 链接或目录
     if java_home.exists() {
-        if java_home.is_dir() {
-            fs::remove_dir_all(java_home)?;
+        let result = if java_home.is_dir() {
+            fs::remove_dir_all(java_home)
         } else {
-            fs::remove_file(java_home)?;
-        }
+            fs::remove_file(java_home)
+        };
+        
+        result.map_err(|e| {
+            if e.kind() == std::io::ErrorKind::PermissionDenied {
+                eprintln!("无法删除现有路径: {}。请检查权限。", e);
+            }
+            e
+        })?;
     }
-    link(&jdk_path, java_home)?;    
+    
+    // 创建符号链接（自动处理权限问题）
+    if let Err(e) = link(&jdk_path, java_home) {
+        eprintln!("创建链接失败: {}", e);
+        return Err(e);
+    }
+    
     // Update the configuration and save it
     let new_cfg = cfg.change_jdk(jdk);
     new_cfg.save()?;

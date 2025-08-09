@@ -2,7 +2,6 @@ use serde_json::Value;
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
-
 pub fn save_json(json: &Value, file_path: &Path) -> Result<(), Box<dyn std::error::Error>> {
     let mut file = File::create(file_path)?;
     file.write_all(serde_json::to_string_pretty(json)?.as_bytes())?;
@@ -14,19 +13,43 @@ pub fn load_json(file_path: &Path) -> Result<Value, Box<dyn std::error::Error>> 
     Ok(json)
 }
 
-
 // 创建系统链接，适配多个系统
-pub fn link(link_name: &Path, target: &Path) -> Result<(), Box<dyn std::error::Error>> {
-    if link_name.exists() {
-        std::fs::remove_file(link_name)?;
+pub fn link(original: &Path, link: &Path) -> Result<(), Box<dyn std::error::Error>> {
+    if original.is_dir() {
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::symlink;
+            symlink(original, link)?;
+        }
+        #[cfg(windows)]
+        {
+            use std::os::windows::fs::symlink_dir;
+            symlink_dir(original, link)?;
+        }
+        #[cfg(not(any(unix, windows)))]
+        {
+            compile_error!("Unsupported OS");
+        }
+    } else {
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::symlink;
+
+            symlink(original, link)?;
+        }
+
+        #[cfg(windows)]
+        {
+            use std::os::windows::fs::symlink_file;
+            symlink_file(original, link)?;
+        }
+        #[cfg(not(any(unix, windows)))]
+        {
+            compile_error!("Unsupported OS");
+        }
     }
-    #[cfg(unix)]
-    std::os::unix::fs::symlink(target, link_name)?;
-    #[cfg(windows)]
-    std::os::windows::fs::symlink_dir(target, link_name)?;
     Ok(())
 }
-
 
 #[derive(Debug, Default, Clone)]
 pub struct UrlParams {

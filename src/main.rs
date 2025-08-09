@@ -8,7 +8,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // println!("{}", cfg.data_dir.display());
     // sync::sync_data(&cfg).await;
     // println!("数据已同步");
-    let java_list = func::switch::switch_jdk("oracle@24.0.1", &cfg);
+    let java_list = func::switch::switch_jdk("oracle@21.0.7", &cfg);
     println!("{:?}", java_list);
     Ok(())
 }
