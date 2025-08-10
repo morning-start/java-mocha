@@ -5,6 +5,7 @@ use crate::core::utils::{
     sha256sum,
 };
 use crate::func::config::Config;
+use indicatif::{ProgressBar, ProgressStyle};
 use serde_json::Value;
 use std::path::{Path, PathBuf};
 
@@ -301,10 +302,15 @@ pub async fn full_install_process(
     skip_check: bool,
 ) -> Result<String, Box<dyn std::error::Error>> {
     // 查询包URL
+    let pb = ProgressBar::new_spinner();
+    pb.set_style(ProgressStyle::default_spinner());
+    pb.enable_steady_tick(std::time::Duration::from_millis(80));
+    pb.set_message("Querying package URL...");
     let (info_url, jdk_version) =
         query_package_url(jdk, &cfg.data_dir)?.ok_or("Package not found")?;
 
     // 获取包信息
+    pb.set_message("Downloading package info...");
     let info_value = get_package_info(&info_url, Some(&cfg.proxy)).await?;
 
     // 提取包信息到PackageInfo结构体
@@ -319,13 +325,19 @@ pub async fn full_install_process(
     };
 
     // 获取校验和信息
+    pb.set_message("Downloading checksum...");
     let (checksum_type, checksum) = get_checksum(&info, Some(&cfg.proxy)).await?;
+    pb.finish_with_message("Successfully fetched info, start downloading...");
 
     // 下载文件
     let package_path = download_cache(&info, &cfg.cache_home, Some(&cfg.proxy), force)
         .await
         .ok_or("Failed to download package")?;
 
+    let pb = ProgressBar::new_spinner();
+    pb.set_style(ProgressStyle::default_spinner());
+    pb.enable_steady_tick(std::time::Duration::from_millis(80));
+    pb.set_message("Checking checksum...");
     // 校验和检查
     if !skip_check {
         let flag = check_pack(&package_path, &checksum, &checksum_type).await?;
@@ -335,12 +347,13 @@ pub async fn full_install_process(
     }
 
     // 解压缩JDK
+    pb.set_message("Extracting JDK...");
     let jdk_target_path = cfg.jdk_home.join(&jdk_version);
     extract_jdk(&package_path, &jdk_target_path)?;
 
     // 移动并清理子文件夹
     move_and_clean_subfolder(&jdk_target_path)?;
-
+    pb.finish_with_message("Successfully extracted JDK");
     Ok(jdk_version)
 }
 

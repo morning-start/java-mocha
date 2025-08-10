@@ -2,8 +2,10 @@ use flate2::read::GzDecoder;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use reqwest::ClientBuilder;
 use serde_json::Value;
-use sha2::{Digest, Sha256};
-use std::fs::{File, read_dir, read_to_string, remove_dir, remove_dir_all, remove_file, rename};
+use ring::digest::{Context, Digest, SHA256};
+use std::fs::{
+    File, metadata, read_dir, read_to_string, remove_dir, remove_dir_all, remove_file, rename,
+};
 use std::io::{self, Read, Write};
 use std::path::Path;
 use tar::Archive;
@@ -113,21 +115,21 @@ pub async fn download_package(
 
 /// 计算文件的 SHA-256 哈希，返回十六进制字符串
 pub fn sha256sum<P: AsRef<Path>>(file_path: P) -> io::Result<String> {
-    let mut file = File::open(file_path.as_ref())?;
-    let mut hasher = Sha256::new();
-    let mut buffer = [0; 4096];
+    let path = file_path.as_ref();
+    let mut file = File::open(path)?;
+    let mut context = Context::new(&SHA256);
+    let mut buffer = [0u8; 4096];
 
     loop {
         let n = file.read(&mut buffer)?;
-
         if n == 0 {
             break;
         }
-        hasher.update(&buffer[..n]);
+        context.update(&buffer[..n]);
     }
 
-    let result = hasher.finalize();
-    Ok(format!("{:x}", result))
+    let digest = context.finish();
+    Ok(digest.as_ref().iter().map(|b| format!("{:02x}", b)).collect())
 }
 
 pub fn save_json(json: &Value, file_path: &Path) -> Result<(), Box<dyn std::error::Error>> {
