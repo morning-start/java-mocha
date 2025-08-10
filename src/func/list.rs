@@ -1,6 +1,6 @@
 use super::sync::SUPPORTED_PUBLISHER;
 use crate::core::{datatype::DataFile, handler::DocumentHandler};
-use serde_json::Value;
+use serde_json::{Number, Value};
 use std::{
     collections::{HashMap, HashSet},
     path::Path,
@@ -37,7 +37,7 @@ pub fn list_local_jdk(jdk_home: &Path) -> Vec<String> {
 /// 该函数从数据目录加载发行商数据，并提取特定字段，
 /// 然后进行一系列处理，包括构建类型组装、字段重命名、排序和筛选，
 /// 最终返回处理后的 JSON 数据。
-pub fn list_publisher(data_dir: &Path) -> serde_json::Value {
+pub fn list_publisher(data_dir: &Path) -> Vec<Value> {
     // 构建发行商数据文件的路径
     let file_path = data_dir.join(DataFile::Distributions.as_ref());
     // 加载发行商数据文件到 DocumentHandler
@@ -80,7 +80,7 @@ pub fn list_publisher(data_dir: &Path) -> serde_json::Value {
         .unwrap();
 
     // 返回处理后的 JSON 数据
-    filtered_publisher.document().clone()
+    filtered_publisher.document().as_array().unwrap().to_vec()
 }
 
 /// 列出版本信息
@@ -95,7 +95,7 @@ pub fn list_publisher(data_dir: &Path) -> serde_json::Value {
 /// # 返回值
 ///
 /// * 处理后的版本 JSON 数据
-pub fn list_version(data_dir: &Path) -> Value {
+pub fn list_version(data_dir: &Path) -> Vec<Value> {
     // 构建发行商数据文件的路径
     let file_path = data_dir.join(DataFile::Distributions.as_ref());
     // 加载发行商数据文件到 DocumentHandler
@@ -104,7 +104,7 @@ pub fn list_version(data_dir: &Path) -> Value {
     let fields = ["name", "build", "official_uri"];
     // 提取指定字段的数据
     let version = handler.get_specific_fields(&fields).unwrap();
-    version.document().clone()
+    version.document().as_array().unwrap().to_vec()
 }
 
 /// 列出发布版本信息
@@ -120,7 +120,7 @@ pub fn list_version(data_dir: &Path) -> Value {
 /// # 返回值
 ///
 /// * 处理后的发布版本 JSON 数据
-pub fn list_publish_version(data_dir: &Path) -> Value {
+pub fn list_publish_version(data_dir: &Path) -> Vec<Value> {
     let file_path = data_dir.join(DataFile::Packages.as_ref());
     // 加载数据文件到 DocumentHandler
     let handler = DocumentHandler::load_data(file_path.as_path()).unwrap();
@@ -154,7 +154,37 @@ pub fn list_publish_version(data_dir: &Path) -> Value {
         Value::Array(arr)
     })
     .unwrap();
-    data.document().clone()
+    // 按 publisher 字段排序数据
+    let new_data = data.orderby(&["publisher", "major_version"]).unwrap();
+    // major_version 转为 list[int]
+    let res = new_data
+        .into_iter()
+        .map(|x| {
+            let mut obj = x.as_object().unwrap().clone();
+            let major_version = obj.remove("major_version").unwrap();
+            // major_version 由 Array<String> 转为 Array<int>
+            let mut major_version = major_version
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|v| v.as_str().unwrap().parse::<i32>().unwrap())
+                .collect::<Vec<_>>();
+            // 倒序
+            major_version.sort_by(|a, b| b.cmp(a));
+
+            // 转换为 JSON 数组: vec<int> -> Value::Array<Number>
+            let major_version = Value::Array(
+                major_version
+                    .iter()
+                    .map(|v| Value::Number(Number::from(*v)))
+                    .collect(),
+            );
+            obj.insert("major_version".to_string(), major_version);
+
+            Value::Object(obj)
+        })
+        .collect::<Vec<Value>>();
+    res
 }
 
 /// 组装构建类型信息

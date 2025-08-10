@@ -1,3 +1,4 @@
+use clap;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use strum_macros::{AsRefStr, Display};
@@ -187,7 +188,7 @@ pub enum PackVersion {
 }
 
 // ANCHOR SupportTerm
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Display, AsRefStr)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Display, AsRefStr, clap::ValueEnum)]
 pub enum SupportTerm {
     #[strum(serialize = "sts")]
     STS,

@@ -1,9 +1,11 @@
 use crate::core::datatype::{DataFile, SupportTerm};
 use crate::core::handler::DocumentHandler;
 use serde_json::Value;
+use std::error::Error;
 use std::{collections::HashMap, path::Path};
 
-pub fn query_info(data_dir: &Path, publisher: &str) -> Result<Value, Box<dyn std::error::Error>> {
+pub fn query_info(data_dir: &Path, publisher: &str) -> Result<Vec<Value>, Box<dyn Error>> {
+
     let handler = DocumentHandler::load_data(&data_dir.join(DataFile::Packages.as_ref()))?;
 
     let fields = [
@@ -39,14 +41,14 @@ pub fn query_info(data_dir: &Path, publisher: &str) -> Result<Value, Box<dyn std
 
     data.rename(&name_map)?;
 
-    Ok(data.document().clone())
+    Ok(data.document().as_array().unwrap().to_vec())
 }
 
 pub fn query_info_version(
     data_dir: &Path,
     publisher: &str,
     major_version: i32,
-) -> Result<Value, Box<dyn std::error::Error>> {
+) -> Result<Vec<Value>, Box<dyn Error>> {
     let handler = DocumentHandler::load_data(&data_dir.join(DataFile::Packages.as_ref()))?;
 
     let fields = [
@@ -83,14 +85,14 @@ pub fn query_info_version(
 
     data.rename(&name_map)?;
 
-    Ok(data.document().clone())
+    Ok(data.document().as_array().unwrap().to_vec())
 }
 
 pub fn query_info_term(
     data_dir: &Path,
     publisher: &str,
     term_of_support: SupportTerm,
-) -> Result<Value, Box<dyn std::error::Error>> {
+) -> Result<Vec<Value>, Box<dyn Error>> {
     let handler = DocumentHandler::load_data(&data_dir.join(DataFile::Packages.as_ref()))?;
 
     let fields = [
@@ -131,5 +133,5 @@ pub fn query_info_term(
 
     data.rename(&name_map)?;
 
-    Ok(data.document().clone())
+    Ok(data.document().as_array().unwrap().to_vec())
 }

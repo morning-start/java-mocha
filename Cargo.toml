@@ -1,13 +1,13 @@
 [package]
 name = "jvm"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2024"
 
 [dependencies]
 indicatif = "0.18.0"
-clap = { version = "4.5.43", features = ["derive"] }
-reqwest = { version = "0.12.22", features = ["json","stream"] }
-tokio = { version = "1.46.1", features = ["full"] }
+clap = { version = "4.5.43", features = ["derive", "env"] }
+reqwest = { version = "0.12.22", features = ["json", "stream"] }
+tokio = { version = "1.47.1", features = ["full"] }
 serde_json = { version = "1.0.142", features = ["preserve_order"] }
 strum = "0.27.2"
 strum_macros = "0.27.2"
@@ -19,3 +19,6 @@ tokio-stream = { version = "0.1", features = ["sync"] }
 zip = "4.3.0"
 tar = "0.4.43"
 flate2 = "1.0.35"
+tabled = "0.20.0"
+console = "0.16.0"
+colored = "3.0.0"

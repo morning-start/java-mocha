@@ -80,7 +80,7 @@ impl DocumentHandler {
         Ok(())
     }
     /// 根据指定字段顺序重排文档中的对象字段
-    pub fn orderby(&mut self, levels: &[&str]) -> Result<(), Box<dyn Error>> {
+    pub fn orderby(&mut self, levels: &[&str]) -> Result<Vec<Value>, Box<dyn Error>> {
         let array = self
             .document
             .as_array_mut()
@@ -98,9 +98,7 @@ impl DocumentHandler {
             }
             new_doc.push(Value::Object(new_item));
         }
-
-        self.document = Value::Array(new_doc);
-        Ok(())
+        Ok(new_doc)
     }
 
     /// 根据指定键对文档进行排序

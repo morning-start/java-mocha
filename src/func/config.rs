@@ -126,6 +126,7 @@ pub fn init_config(
     jdk_home: Option<PathBuf>,
     java_home: Option<PathBuf>,
     cache_home: Option<PathBuf>,
+    proxy: Option<String>,
 ) -> Result<Config, Box<dyn std::error::Error>> {
     // 默认值
     let mut cfg_dict = HashMap::new();
@@ -135,8 +136,9 @@ pub fn init_config(
     cfg_dict.insert("cache_home".to_string(), jvm_root.join("cache").to_string_lossy().to_string());
     cfg_dict.insert("data_dir".to_string(), jvm_root.join("data").to_string_lossy().to_string());
     cfg_dict.insert("jdk_version".to_string(), "".to_string());
+    cfg_dict.insert("proxy".to_string(), "".to_string());
 
-    // 如果有config
+    // 如果有config.json文件，加载并更新cfg_dict
     let config_file = jvm_root.join("config.json");
     if config_file.exists() {
         let existing_config = Config::load()?;
@@ -161,6 +163,10 @@ pub fn init_config(
     
     if let Some(cache_home_val) = cache_home {
         cfg_dict.insert("cache_home".to_string(), cache_home_val.to_string_lossy().to_string());
+    }
+    
+    if let Some(proxy_val) = proxy {
+        cfg_dict.insert("proxy".to_string(), proxy_val);
     }
     
 
