@@ -6,6 +6,7 @@
         "distro",
         "foojay",
         "javafx",
+        "jdks",
         "reqwest"
     ]
 }

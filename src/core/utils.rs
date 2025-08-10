@@ -142,14 +142,16 @@ pub fn load_json(file_path: &Path) -> Result<Value, Box<dyn std::error::Error>> 
 }
 
 // 创建系统链接，适配多个系统
-pub fn link(link_name: &Path, target: &Path) -> Result<(), Box<dyn std::error::Error>> {
-    if link_name.exists() {
-        remove_file(link_name)?;
+pub fn link(original: &Path, link: &Path) -> Result<(), Box<dyn std::error::Error>> {
+    // println!("Create link: {} -> {}", original.display(), link.display());
+    if link.exists() {
+        remove_file(link)?;
     }
+
     #[cfg(unix)]
-    std::os::unix::fs::symlink(target, link_name)?;
+    std::os::unix::fs::symlink(original, link)?;
     #[cfg(windows)]
-    std::os::windows::fs::symlink_dir(target, link_name)?;
+    std::os::windows::fs::symlink_dir(original, link)?;
     Ok(())
 }
 

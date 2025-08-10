@@ -70,15 +70,11 @@ pub fn list_publisher(data_dir: &Path) -> Vec<Value> {
     // 执行字段重命名
     publisher.rename(&name_map).unwrap();
 
-    // 按 name, build, official_uri 字段顺序对数据进行排序
-    publisher
-        .orderby(&["name", "build", "official_uri"])
-        .unwrap();
     // 获取受支持的发行商名称列表
     let supported_publisher: Vec<&str> = SUPPORTED_PUBLISHER.iter().map(|x| x.as_ref()).collect();
 
     // 筛选出受支持的发行商数据
-    let filtered_publisher = publisher
+    let mut filtered_publisher = publisher
         .filter(|x| {
             x.as_object()
                 .and_then(|obj| obj.get("name"))
@@ -89,7 +85,10 @@ pub fn list_publisher(data_dir: &Path) -> Vec<Value> {
         .unwrap();
 
     // 返回处理后的 JSON 数据
-    filtered_publisher.document().as_array().unwrap().to_vec()
+    let res = filtered_publisher
+        .orderby(&["name", "build", "official_uri"])
+        .unwrap();
+    res
 }
 
 /// 列出版本信息
@@ -106,11 +105,11 @@ pub fn list_publisher(data_dir: &Path) -> Vec<Value> {
 /// * 处理后的版本 JSON 数据
 pub fn list_version(data_dir: &Path) -> Vec<Value> {
     // 构建发行商数据文件的路径
-    let file_path = data_dir.join(DataFile::Distributions.as_ref());
+    let file_path = data_dir.join(DataFile::Versions.as_ref());
     // 加载发行商数据文件到 DocumentHandler
     let handler = DocumentHandler::load_data(file_path.as_path()).unwrap();
     // 定义需要提取的字段列表
-    let fields = ["name", "build", "official_uri"];
+    let fields = ["major_version", "term_of_support", "maintained"];
     // 提取指定字段的数据
     let version = handler.get_specific_fields(&fields).unwrap();
     version.document().as_array().unwrap().to_vec()

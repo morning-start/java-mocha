@@ -16,7 +16,7 @@ use std::path::PathBuf;
 #[derive(Parser)]
 #[clap(
     name = "jvm",
-    version = "0.1.0",
+    version = "1.0.0",
     about = "Java Mocha is a Java version management tool developed based on the Foojay API.",
     long_about = "Java Mocha is a Java version management tool developed based on the Foojay API.\nIt can be used for version management via the command-line interface or integrated through the API.",
     after_help = "Before using, \n1. please first initialize the configuration with `jvm config`,\n2. then sync the data with `jvm sync`. \n3. Use `--help` to view specific command usage."
@@ -29,7 +29,7 @@ struct Cli {
 #[derive(Subcommand)]
 enum Commands {
     /// Configure the JDK directory, and cache directory for Java Mocha.
-    #[clap(name = "config")]
+    #[clap(name = "config", long_flag = "cfg")]
     Config {
         /// JDK directory, default is the `jdk` directory under the JVM root directory.
         #[clap(
@@ -52,7 +52,7 @@ enum Commands {
     #[clap(name = "sync")]
     Sync {},
     /// List infos for local jdk, all publisher, all version.
-    #[clap(name = "list")]
+    #[clap(name = "list", long_flag = "ls")]
     List {
         /// Publisher name.
         #[clap(short, long)]
@@ -62,19 +62,19 @@ enum Commands {
         version: bool,
     },
     /// Query available JDKs.
-    #[clap(name = "query")]
+    #[clap(name = "query", long_flag = "q")]
     Query {
         /// The publisher name.
         publisher: String,
         /// Detailed major version information.
-        #[clap(short, long)]
+        #[clap(short = 'v', long)]
         major_version: Option<i32>,
         /// Term of support.
         #[clap(short, long)]
         term_of_support: Option<SupportTerm>,
     },
     /// Install JDKs.
-    #[clap(name = "install")]
+    #[clap(name = "install", long_flag = "i")]
     Install {
         /// The JDK version format as publisher@version
         /// e.g. oracle@23, oracle@23.0.2, oracle@latest, oracle@lts
@@ -87,13 +87,13 @@ enum Commands {
         skip_check: bool,
     },
     /// Switch java version.
-    #[clap(name = "switch")]
+    #[clap(name = "switch", long_flag = "sw")]
     Switch {
         /// The JDK version format as publisher@version e.g. oracle@11
         jdk: String,
     },
     /// Uninstall JDKs.
-    #[clap(name = "uninstall")]
+    #[clap(name = "uninstall", long_flag = "rm")]
     Uninstall {
         /// The JDK version format as publisher@version e.g. oracle@11
         jdk: String,
@@ -125,13 +125,12 @@ async fn main() {
             ) {
                 Ok(cfg) => {
                     println!("Config saved successfully.");
-                    match cfg.java_home {
-                        java_home => {
-                            println!(
-                                "Please set JAVA_HOME to {} manually. And do again.",
-                                java_home.display()
-                            );
-                        }
+                    let env_java_home = std::env::var("JAVA_HOME").unwrap();
+                    let env_java_home = PathBuf::from(env_java_home);
+                    if cfg.java_home.eq(&env_java_home) {
+                        println!("JAVA_HOME is set to {}", cfg.java_home.display());
+                    } else {
+                        println!("Please set JAVA_HOME to {} manually.", cfg.java_home.display());
                     }
                 }
                 Err(e) => eprintln!("Error: {}", e),

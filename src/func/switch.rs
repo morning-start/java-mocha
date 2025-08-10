@@ -49,7 +49,7 @@ pub fn switch_jdk(jdk: &str, cfg: &Config) -> Result<bool, Box<dyn std::error::E
         
         result.map_err(|e| {
             if e.kind() == std::io::ErrorKind::PermissionDenied {
-                eprintln!("无法删除现有路径: {}。请检查权限。", e);
+                eprintln!("Remove existing path failed: {}。Please check permissions.", e);
             }
             e
         })?;
@@ -57,7 +57,7 @@ pub fn switch_jdk(jdk: &str, cfg: &Config) -> Result<bool, Box<dyn std::error::E
     
     // 创建符号链接（自动处理权限问题）
     if let Err(e) = link(&jdk_path, java_home) {
-        eprintln!("创建链接失败: {}", e);
+        eprintln!("Create link failed: {}", e);
         return Err(e);
     }
     

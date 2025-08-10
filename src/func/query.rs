@@ -5,7 +5,6 @@ use std::error::Error;
 use std::{collections::HashMap, path::Path};
 
 pub fn query_info(data_dir: &Path, publisher: &str) -> Result<Vec<Value>, Box<dyn Error>> {
-
     let handler = DocumentHandler::load_data(&data_dir.join(DataFile::Packages.as_ref()))?;
 
     let fields = [
@@ -84,8 +83,9 @@ pub fn query_info_version(
     name_map.insert("distribution_version".to_string(), "Version".to_string());
 
     data.rename(&name_map)?;
-
-    Ok(data.document().as_array().unwrap().to_vec())
+    // publisher ┃ major ┃ term ┃ latest ┃ Version
+    let res = data.orderby(&["publisher", "major", "term", "latest", "Version"]).unwrap();
+    Ok(res)
 }
 
 pub fn query_info_term(
@@ -132,6 +132,7 @@ pub fn query_info_term(
     name_map.insert("distribution_version".to_string(), "Version".to_string());
 
     data.rename(&name_map)?;
+    let res = data.orderby(&["publisher", "major", "term", "latest", "Version"]).unwrap();
 
-    Ok(data.document().as_array().unwrap().to_vec())
+    Ok(res)
 }
