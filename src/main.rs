@@ -130,7 +130,10 @@ async fn main() {
                     if cfg.java_home.eq(&env_java_home) {
                         println!("JAVA_HOME is set to {}", cfg.java_home.display());
                     } else {
-                        println!("Please set JAVA_HOME to {} manually.", cfg.java_home.display());
+                        println!(
+                            "Please set JAVA_HOME to {} manually.",
+                            cfg.java_home.display()
+                        );
                     }
                 }
                 Err(e) => eprintln!("Error: {}", e),
@@ -221,11 +224,8 @@ async fn main() {
             skip_check,
         } => match Config::load() {
             Ok(cfg) => {
-                if full_install_process(&jdk, &cfg, force, skip_check)
-                    .await
-                    .is_ok()
-                {
-                    println!("Install JDK: {}", jdk);
+                if let Ok(jdk_version) = full_install_process(&jdk, &cfg, force, skip_check).await {
+                    println!("Install JDK: {}", jdk_version);
                 } else {
                     eprintln!("Install JDK {} failed.", jdk);
                 }

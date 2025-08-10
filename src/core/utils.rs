@@ -50,7 +50,7 @@ pub fn extract_tar_gz(
 }
 
 // 构建带有可选代理的客户端
-fn build_client(proxy_url: Option<&str>) -> Result<reqwest::Client, reqwest::Error> {
+pub fn build_client(proxy_url: Option<&str>) -> Result<reqwest::Client, reqwest::Error> {
     let mut builder = ClientBuilder::new();
 
     if let Some(proxy_str) = proxy_url {

@@ -1,9 +1,10 @@
 use crate::core::datatype::{DataFile, PackageInfo};
 use crate::core::handler::DocumentHandler;
 use crate::core::utils::{
-    download_package, extract_tar_gz, extract_zip, move_and_clean_subfolder, sha256sum,
+    build_client, download_package, extract_tar_gz, extract_zip, move_and_clean_subfolder,
+    sha256sum,
 };
-use reqwest;
+use crate::func::config::Config;
 use serde_json::Value;
 use std::path::{Path, PathBuf};
 
@@ -135,15 +136,7 @@ pub async fn get_package_info(
     proxy: Option<&str>,
 ) -> Result<Value, Box<dyn std::error::Error>> {
     // 创建HTTP客户端
-    let client = if let Some(proxy_str) = proxy {
-        // 如果提供了代理，创建带代理的客户端
-        let proxy = reqwest::Proxy::all(proxy_str)?;
-        reqwest::Client::builder().proxy(proxy).build()?
-    } else {
-        // 如果没有提供代理，创建默认客户端
-        reqwest::Client::new()
-    };
-
+    let client = build_client(proxy)?;
     // 发送GET请求
     let response = client.get(url).send().await?;
 
@@ -176,30 +169,17 @@ pub async fn get_package_info(
 /// # Returns
 /// * `Result<(String, String), Box<dyn std::error::Error>>` - 包含校验和类型和校验和的元组
 pub async fn get_checksum(
-    info: &serde_json::Value,
+    info: &PackageInfo,
     proxy: Option<&str>,
 ) -> Result<(String, String), Box<dyn std::error::Error>> {
-    let checksum_type = info
-        .get("checksum_type")
-        .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .to_string();
-    let mut checksum = info
-        .get("checksum")
-        .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .to_string();
-    let checksum_uri = info.get("checksum_uri").and_then(|v| v.as_str());
+    let checksum_type = info.checksum_type.clone();
+    let mut checksum = info.checksum.clone();
+    let checksum_uri = info.checksum_uri.clone();
 
-    if let Some(uri) = checksum_uri {
-        let client = if let Some(proxy_str) = proxy {
-            let proxy = reqwest::Proxy::all(proxy_str)?;
-            reqwest::Client::builder().proxy(proxy).build()?
-        } else {
-            reqwest::Client::new()
-        };
-
-        let response = client.get(uri).send().await?;
+    // 如果 checksum 是空字符串，且 checksum_uri 不是空字符串
+    if checksum.is_empty() && !checksum_uri.is_empty() {
+        let client = build_client(proxy)?;
+        let response = client.get(checksum_uri).send().await?;
         response.error_for_status_ref()?;
         checksum = response.text().await?.trim().to_string();
     }
@@ -316,10 +296,10 @@ pub async fn download_cache(
 /// * `Result<(), Box<dyn std::error::Error>>` - 安装结果
 pub async fn full_install_process(
     jdk: &str,
-    cfg: &crate::func::config::Config,
+    cfg: &Config,
     force: bool,
     skip_check: bool,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<String, Box<dyn std::error::Error>> {
     // 查询包URL
     let (info_url, jdk_version) =
         query_package_url(jdk, &cfg.data_dir)?.ok_or("Package not found")?;
@@ -339,7 +319,7 @@ pub async fn full_install_process(
     };
 
     // 获取校验和信息
-    let (checksum_type, checksum) = get_checksum(&info_value, Some(&cfg.proxy)).await?;
+    let (checksum_type, checksum) = get_checksum(&info, Some(&cfg.proxy)).await?;
 
     // 下载文件
     let package_path = download_cache(&info, &cfg.cache_home, Some(&cfg.proxy), force)
@@ -361,7 +341,7 @@ pub async fn full_install_process(
     // 移动并清理子文件夹
     move_and_clean_subfolder(&jdk_target_path)?;
 
-    Ok(())
+    Ok(jdk_version)
 }
 
 fn val2str(val: &Value, str: &str) -> String {
