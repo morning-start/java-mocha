@@ -1,7 +1,135 @@
+use flate2::read::GzDecoder;
+use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
+use reqwest::ClientBuilder;
 use serde_json::Value;
-use std::fs::File;
-use std::io::Write;
+use sha2::{Digest, Sha256};
+use std::fs::{File, read_dir, read_to_string, remove_dir, remove_dir_all, remove_file, rename};
+use std::io::{self, Read, Write};
 use std::path::Path;
+use tar::Archive;
+use tokio::fs::File as TokioFile;
+use tokio::io::AsyncWriteExt;
+use tokio_stream::StreamExt;
+use zip::ZipArchive;
+
+/// 解压缩zip文件到指定文件夹
+///
+/// # Arguments
+/// * `zip_file` - zip文件的路径
+/// * `target_folder` - 目标文件夹的路径
+///
+/// # Returns
+/// * `Result<(), Box<dyn std::error::Error>>` - 解压缩结果
+pub fn extract_zip(
+    zip_file: &Path,
+    target_folder: &Path,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let file = File::open(zip_file)?;
+    let mut archive = ZipArchive::new(file)?;
+    archive.extract(target_folder)?;
+    Ok(())
+}
+
+/// 解压缩tar.gz文件到指定文件夹
+///
+/// # Arguments
+/// * `tar_gz_file` - tar.gz文件的路径
+/// * `target_folder` - 目标文件夹的路径
+///
+/// # Returns
+/// * `Result<(), Box<dyn std::error::Error>>` - 解压缩结果
+pub fn extract_tar_gz(
+    tar_gz_file: &Path,
+    target_folder: &Path,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let file = File::open(tar_gz_file)?;
+    let gz_decoder = GzDecoder::new(file);
+    let mut archive = Archive::new(gz_decoder);
+    archive.unpack(target_folder)?;
+    Ok(())
+}
+
+// 构建带有可选代理的客户端
+fn build_client(proxy_url: Option<&str>) -> Result<reqwest::Client, reqwest::Error> {
+    let mut builder = ClientBuilder::new();
+
+    if let Some(proxy_str) = proxy_url {
+        if let Ok(proxy) = reqwest::Proxy::all(proxy_str) {
+            builder = builder.proxy(proxy);
+        }
+    }
+
+    builder.build()
+}
+pub async fn download_package(
+    uri: &str,
+    file_path: &Path,
+    proxy_url: Option<&str>,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let client = build_client(proxy_url)?;
+
+    let response = client.get(uri).send().await?;
+    // let response= response.error_for_status()?;
+
+    let total_size = response
+        .headers()
+        .get("content-length")
+        .and_then(|h| h.to_str().ok())
+        .and_then(|h| h.parse::<u64>().ok())
+        .unwrap_or(0);
+
+    let m = MultiProgress::new();
+    let pb = m.add(ProgressBar::new(total_size));
+    pb.set_style(
+        ProgressStyle::with_template(
+            "[{elapsed_precise}] {bar:40.cyan/blue} {bytes:>7}/{total_bytes:7} ({percent:>3}%) {bytes_per_sec:9} {msg}",
+        )?
+        .progress_chars("##-"),
+    );
+    let msg = file_path
+        .file_name()
+        .and_then(|os_str| os_str.to_str()) // &OsStr -> Option<&str>
+        .unwrap_or("unknown"); // 失败时提供默认值
+
+    pb.set_message(msg.to_string());
+
+    let mut file = TokioFile::create(file_path).await?;
+    let mut stream = response.bytes_stream();
+    let mut downloaded: u64 = 0;
+
+    while let Some(chunk) = stream.next().await {
+        let chunk = chunk?;
+        file.write_all(&chunk).await?;
+        let chunk_len = chunk.len() as u64;
+        downloaded += chunk_len;
+        pb.set_position(downloaded);
+    }
+
+    file.flush().await?;
+    pb.finish_with_message("✓");
+
+    Ok(())
+}
+
+/// 计算文件的 SHA-256 哈希，返回十六进制字符串
+pub fn sha256sum<P: AsRef<Path>>(file_path: P) -> io::Result<String> {
+    let mut file = File::open(file_path.as_ref())?;
+    let mut hasher = Sha256::new();
+    let mut buffer = [0; 4096];
+
+    loop {
+        let n = file.read(&mut buffer)?;
+
+        if n == 0 {
+            break;
+        }
+        hasher.update(&buffer[..n]);
+    }
+
+    let result = hasher.finalize();
+    Ok(format!("{:x}", result))
+}
+
 pub fn save_json(json: &Value, file_path: &Path) -> Result<(), Box<dyn std::error::Error>> {
     let mut file = File::create(file_path)?;
     file.write_all(serde_json::to_string_pretty(json)?.as_bytes())?;
@@ -9,45 +137,19 @@ pub fn save_json(json: &Value, file_path: &Path) -> Result<(), Box<dyn std::erro
 }
 
 pub fn load_json(file_path: &Path) -> Result<Value, Box<dyn std::error::Error>> {
-    let json = serde_json::from_str(&std::fs::read_to_string(file_path)?)?;
+    let json = serde_json::from_str(&read_to_string(file_path)?)?;
     Ok(json)
 }
 
 // 创建系统链接，适配多个系统
-pub fn link(original: &Path, link: &Path) -> Result<(), Box<dyn std::error::Error>> {
-    if original.is_dir() {
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::symlink;
-            symlink(original, link)?;
-        }
-        #[cfg(windows)]
-        {
-            use std::os::windows::fs::symlink_dir;
-            symlink_dir(original, link)?;
-        }
-        #[cfg(not(any(unix, windows)))]
-        {
-            compile_error!("Unsupported OS");
-        }
-    } else {
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::symlink;
-
-            symlink(original, link)?;
-        }
-
-        #[cfg(windows)]
-        {
-            use std::os::windows::fs::symlink_file;
-            symlink_file(original, link)?;
-        }
-        #[cfg(not(any(unix, windows)))]
-        {
-            compile_error!("Unsupported OS");
-        }
+pub fn link(link_name: &Path, target: &Path) -> Result<(), Box<dyn std::error::Error>> {
+    if link_name.exists() {
+        remove_file(link_name)?;
     }
+    #[cfg(unix)]
+    std::os::unix::fs::symlink(target, link_name)?;
+    #[cfg(windows)]
+    std::os::windows::fs::symlink_dir(target, link_name)?;
     Ok(())
 }
 
@@ -96,9 +198,57 @@ impl UrlParams {
     pub fn is_empty(&self) -> bool {
         self.params.is_empty()
     }
+}
 
-    /// 清空所有参数
-    pub fn clear(&mut self) {
-        self.params.clear();
+/// 检测指定文件夹下是否只有一个文件夹，如果是，则将子文件夹的所有内容移动到指定文件夹，然后删除子文件夹。
+///
+/// # Arguments
+/// * `target_folder` - 目标文件夹的路径
+///
+/// # Returns
+/// * `Result<bool, Box<dyn std::error::Error>>` - 如果只有一个子文件夹并成功移动和删除则返回true，否则返回false
+pub fn move_and_clean_subfolder(target_folder: &Path) -> Result<bool, Box<dyn std::error::Error>> {
+    let mut folders = Vec::new();
+
+    // 遍历目标文件夹中的所有项目
+    for entry in read_dir(target_folder)? {
+        let entry = entry?;
+        let path = entry.path();
+
+        // 检查是否是文件夹
+        if path.is_dir() {
+            folders.push(path);
+        }
+    }
+
+    // 如果只有一个子文件夹
+    if folders.len() == 1 {
+        let subfolder_path = &folders[0];
+
+        // 遍历子文件夹中的所有项目
+        for entry in read_dir(subfolder_path)? {
+            let entry = entry?;
+            let item = entry.path();
+            let dst = target_folder.join(entry.file_name());
+
+            // 如果目标位置已存在文件或文件夹，先删除
+            if dst.exists() {
+                if dst.is_dir() {
+                    remove_dir_all(&dst)?;
+                } else {
+                    remove_file(&dst)?;
+                }
+            }
+
+            // 移动文件或文件夹
+            rename(&item, &dst)?;
+        }
+
+        // 删除空的子文件夹
+        remove_dir(subfolder_path)?;
+
+        Ok(true)
+    } else {
+        Ok(false)
     }
 }

@@ -1,7 +1,53 @@
+use serde::{Deserialize, Serialize};
 use std::str::FromStr;
-
 use strum_macros::{AsRefStr, Display};
 // cSpell: disable
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PackageInfo {
+    /// 文件名
+    pub filename: String,
+
+    /// 直接下载链接
+    #[serde(rename = "direct_download_uri")]
+    pub direct_download_uri: String,
+
+    /// 下载页面链接（可能为空）
+    #[serde(rename = "download_site_uri")]
+    pub download_site_uri: String,
+
+    /// 签名文件的 URI（可选）
+    #[serde(rename = "signature_uri")]
+    pub signature_uri: String,
+
+    /// 校验和文件的 URI
+    #[serde(rename = "checksum_uri")]
+    pub checksum_uri: String,
+
+    /// 实际的校验和值（初始为空，需从 checksum_uri 下载后填充）
+    #[serde(rename = "checksum")]
+    pub checksum: String,
+
+    /// 校验和类型（如 sha256）
+    #[serde(rename = "checksum_type")]
+    pub checksum_type: String,
+}
+impl PackageInfo {
+    /// 获取校验和类型
+    pub fn checksum_type(&self) -> &str {
+        &self.checksum_type
+    }
+
+    /// 是否有有效的 checksum_uri
+    pub fn has_checksum_uri(&self) -> bool {
+        !self.checksum_uri.is_empty()
+    }
+
+    /// 是否已有 checksum 值
+    pub fn has_checksum(&self) -> bool {
+        !self.checksum.is_empty()
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Display, AsRefStr)]
 pub enum DataFile {
