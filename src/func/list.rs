@@ -24,10 +24,19 @@ pub fn list_local_jdk(jdk_home: &Path) -> Vec<String> {
         for entry in jdk_home.read_dir().unwrap() {
             let entry = entry.unwrap();
             if entry.file_type().unwrap().is_dir() {
-                jdk_list.push(entry.path().as_path().to_string_lossy().to_string());
+                jdk_list.push(
+                    entry
+                        .path()
+                        .as_path()
+                        .file_name()
+                        .unwrap()
+                        .to_string_lossy()
+                        .to_string(),
+                );
             }
         }
     }
+
     jdk_list
 }
 
@@ -154,8 +163,10 @@ pub fn list_publish_version(data_dir: &Path) -> Vec<Value> {
         Value::Array(arr)
     })
     .unwrap();
+
     // 按 publisher 字段排序数据
     let new_data = data.orderby(&["publisher", "major_version"]).unwrap();
+
     // major_version 转为 list[int]
     let res = new_data
         .into_iter()

@@ -2,6 +2,7 @@ use clap::{Arg, Parser, Subcommand};
 // use core::style::{show_table, show_tree};
 use jvm::core::datatype::SupportTerm;
 use jvm::core::style::{show_table, show_tree};
+use jvm::func::{self, install};
 use jvm::func::{
     config::{Config, init_config},
     install::full_install_process,
@@ -100,7 +101,8 @@ enum Commands {
     },
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let cli = Cli::parse();
 
     match cli.command {
@@ -115,7 +117,13 @@ fn main() {
             let java_home_path = java_home.map(PathBuf::from);
             let cache_home_path = cache_home.map(PathBuf::from);
 
-            match init_config(jvm_root, jdk_home_path, java_home_path, cache_home_path, proxy) {
+            match init_config(
+                jvm_root,
+                jdk_home_path,
+                java_home_path,
+                cache_home_path,
+                proxy,
+            ) {
                 Ok(cfg) => {
                     println!("Config saved successfully.");
                     match cfg.java_home {
@@ -125,7 +133,6 @@ fn main() {
                                 java_home.display()
                             );
                         }
-                        _ => (),
                     }
                 }
                 Err(e) => eprintln!("Error: {}", e),
@@ -214,16 +221,16 @@ fn main() {
             jdk,
             force,
             skip_check,
-        } => {
-            match Config::load() {
-                Ok(cfg) => {
-                    // 这里需要实现 full_install_process 函数
-                    // full_install_process(&jdk, &cfg, force, skip_check);
+        } => match Config::load() {
+            Ok(cfg) => {
+                if full_install_process(&jdk, &cfg, force, skip_check).await.is_ok() {
                     println!("Install JDK: {}", jdk);
+                } else {
+                    eprintln!("Install JDK {} failed.", jdk);
                 }
-                Err(e) => eprintln!("Error: {}", e),
             }
-        }
+            Err(e) => eprintln!("Error: {}", e),
+        },
         Commands::Switch { jdk } => match Config::load() {
             Ok(cfg) => match switch_jdk(&jdk, &cfg) {
                 Ok(true) => println!("JDK switched to {}.", jdk),
