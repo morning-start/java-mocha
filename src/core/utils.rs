@@ -1,11 +1,9 @@
 use flate2::read::GzDecoder;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use reqwest::ClientBuilder;
+use ring::digest::{Context, SHA256};
 use serde_json::Value;
-use ring::digest::{Context, Digest, SHA256};
-use std::fs::{
-    File, metadata, read_dir, read_to_string, remove_dir, remove_dir_all, remove_file, rename,
-};
+use std::fs::{File, read_dir, read_to_string, remove_dir, remove_dir_all, remove_file, rename};
 use std::io::{self, Read, Write};
 use std::path::Path;
 use tar::Archive;
@@ -129,7 +127,11 @@ pub fn sha256sum<P: AsRef<Path>>(file_path: P) -> io::Result<String> {
     }
 
     let digest = context.finish();
-    Ok(digest.as_ref().iter().map(|b| format!("{:02x}", b)).collect())
+    Ok(digest
+        .as_ref()
+        .iter()
+        .map(|b| format!("{:02x}", b))
+        .collect())
 }
 
 pub fn save_json(json: &Value, file_path: &Path) -> Result<(), Box<dyn std::error::Error>> {
