@@ -1,8 +1,7 @@
-use clap::{Arg, Parser, Subcommand};
+use clap::{Parser, Subcommand};
 // use core::style::{show_table, show_tree};
 use jvm::core::datatype::SupportTerm;
 use jvm::core::style::{show_table, show_tree};
-use jvm::func::{self, install};
 use jvm::func::{
     config::{Config, init_config},
     install::full_install_process,
@@ -223,7 +222,10 @@ async fn main() {
             skip_check,
         } => match Config::load() {
             Ok(cfg) => {
-                if full_install_process(&jdk, &cfg, force, skip_check).await.is_ok() {
+                if full_install_process(&jdk, &cfg, force, skip_check)
+                    .await
+                    .is_ok()
+                {
                     println!("Install JDK: {}", jdk);
                 } else {
                     eprintln!("Install JDK {} failed.", jdk);
