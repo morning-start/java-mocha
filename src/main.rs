@@ -29,7 +29,7 @@ struct Cli {
 #[derive(Subcommand)]
 enum Commands {
     /// Configure the JDK directory, and cache directory for Java Mocha.
-    #[clap(name = "config", long_flag = "cfg")]
+    #[clap(name = "config" , alias = "cfg")]
     Config {
         /// JDK directory, default is the `jdk` directory under the JVM root directory.
         #[clap(
@@ -52,7 +52,7 @@ enum Commands {
     #[clap(name = "sync")]
     Sync {},
     /// List infos for local jdk, all publisher, all version.
-    #[clap(name = "list", long_flag = "ls")]
+    #[clap(name = "list", alias = "ls")]
     List {
         /// Publisher name.
         #[clap(short, long)]
@@ -62,7 +62,7 @@ enum Commands {
         version: bool,
     },
     /// Query available JDKs.
-    #[clap(name = "query", long_flag = "q")]
+    #[clap(name = "query", alias = "q")]
     Query {
         /// The publisher name.
         publisher: String,
@@ -74,7 +74,7 @@ enum Commands {
         term_of_support: Option<SupportTerm>,
     },
     /// Install JDKs.
-    #[clap(name = "install", long_flag = "i")]
+    #[clap(name = "install", alias = "i")]
     Install {
         /// The JDK version format as publisher@version
         /// e.g. oracle@23, oracle@23.0.2, oracle@latest, oracle@lts
@@ -87,13 +87,13 @@ enum Commands {
         skip_check: bool,
     },
     /// Switch java version.
-    #[clap(name = "switch", long_flag = "sw")]
+    #[clap(name = "switch", alias = "sw")]
     Switch {
         /// The JDK version format as publisher@version e.g. oracle@11
         jdk: String,
     },
     /// Uninstall JDKs.
-    #[clap(name = "uninstall", long_flag = "rm")]
+    #[clap(name = "uninstall", alias = "rm")]
     Uninstall {
         /// The JDK version format as publisher@version e.g. oracle@11
         jdk: String,
@@ -141,8 +141,7 @@ async fn main() {
         }
         Commands::Sync {} => match Config::load() {
             Ok(cfg) => {
-                let rt = tokio::runtime::Runtime::new().unwrap();
-                rt.block_on(sync_data(&cfg));
+                sync_data(&cfg).await
             }
             Err(e) => eprintln!("Error: {}", e),
         },

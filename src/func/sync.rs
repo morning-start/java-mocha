@@ -14,12 +14,16 @@ pub async fn sync_data(cfg: &Config) {
     let pb = ProgressBar::new_spinner();
     pb.set_style(ProgressStyle::default_spinner());
     pb.enable_steady_tick(std::time::Duration::from_millis(80));
-    pb.set_message("Downloading...");
+    pb.set_message("Searching distributions...");
     let distributions = foojay
         .search_distributions(None, None, None, None)
         .await
         .unwrap();
+    
+    pb.set_message("Searching versions...");
     let versions = foojay.search_versions(None, None, None).await.unwrap();
+    
+    pb.set_message("Searching packages...");
     let packages = foojay
         .search_packages(
             None,
