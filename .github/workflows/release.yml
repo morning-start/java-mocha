@@ -32,20 +32,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Install rust
-        uses: actions-rust-lang/setup-rust-toolchain@v1.13.0
-      - name: rust build
-        run: cargo build --release
-      - name: Compress Release
-        uses: thedoctor0/zip-release@0.7.6
+      - name: Build Rust
+        uses: taiki-e/upload-rust-binary-action@v1.27.0
         with:
-          type: 'zip'
-          directory: target/release
-          path: ${{ matrix.path }}
-          filename: jvm-${{ github.ref_name }}-${{ matrix.build }}.zip
-      - name: Create Release
-        uses: ncipollo/release-action@v1.18.0
-        with:
-          artifacts: jvm-${{ github.ref_name }}-${{ matrix.build }}.zip
           token: ${{ secrets.GITHUB_TOKEN }}
-          allowUpdates: true
+          target: ${{ matrix.target }}
+          tar: unix
+          zip: windows
