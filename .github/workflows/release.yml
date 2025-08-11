@@ -1,0 +1,59 @@
+name: Release Rust
+
+on:
+  push:
+    tags:
+      - 'v*'
+jobs:
+  release:
+    permissions:  # 添加权限设置
+        contents: write  # 允许读写仓库内容    
+    runs-on: ${{ matrix.os }}
+    strategy:
+      # matrix上下文，包含在工作流中定义的应用于当前作业的矩阵属性
+      matrix:
+        # 你可以添加更多你想要的构建平台
+        include:
+          - build: linux
+            os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            path: jvm
+
+          - build: macos
+            os: macos-latest
+            target: x86_64-apple-darwin
+            path: jvm
+
+
+          - build: win-gnu
+            os: windows-latest
+            target: x86_64-pc-windows-gnu
+            path: jvm.exe
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1.0.6
+        # 运行此步骤提供的参数
+        with:
+         toolchain: stable
+
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: build
+          args: --verbose --release
+      - name: Compress Release
+        uses: thedoctor0/zip-release@0.7.6
+        with:
+          type: 'zip'
+          directory: target/Release
+          path: ${{ matrix.path }}
+          file_name: jvm-${{ github.ref_name }}-${{ matrix.build }}.zip
+      - name: Create Release
+        uses: ncipollo/release-action@v1.18.0
+        with:
+          artifacts: "./jvm-${{ github.ref_name }}-${{ matrix.build }}.zip"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          allowUpdates: true
