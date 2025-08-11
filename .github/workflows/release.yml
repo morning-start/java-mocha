@@ -16,18 +16,15 @@ jobs:
         include:
           - build: linux
             os: ubuntu-latest
-            target: x86_64-unknown-linux-musl
+            target: x86_64-unknown-linux-gnu
             path: jvm
-
           - build: macos
             os: macos-latest
             target: x86_64-apple-darwin
             path: jvm
-
-
           - build: win-gnu
             os: windows-latest
-            target: x86_64-pc-windows-gnu
+            target: x86_64-pc-windows-msvc
             path: jvm.exe
     steps:
       - name: Checkout code
