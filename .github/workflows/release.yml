@@ -46,6 +46,6 @@ jobs:
       - name: Create Release
         uses: ncipollo/release-action@v1.18.0
         with:
-          artifacts: "./jvm-${{ github.ref_name }}-${{ matrix.build }}.zip"
+          artifacts: jvm-${{ github.ref_name }}-${{ matrix.build }}.zip
           token: ${{ secrets.GITHUB_TOKEN }}
           allowUpdates: true
