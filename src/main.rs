@@ -16,7 +16,7 @@ use std::path::PathBuf;
 #[derive(Parser)]
 #[clap(
     name = "jvm",
-    version = "1.0.0",
+    version = "2.0.0",
     about = "Java Mocha is a Java version management tool developed based on the Foojay API.",
     long_about = "Java Mocha is a Java version management tool developed based on the Foojay API.\nIt can be used for version management via the command-line interface or integrated through the API.",
     after_help = "Before using, \n1. please first initialize the configuration with `jvm config`,\n2. then sync the data with `jvm sync`. \n3. Use `--help` to view specific command usage."
