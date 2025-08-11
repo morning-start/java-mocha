@@ -40,9 +40,9 @@ jobs:
         uses: thedoctor0/zip-release@0.7.6
         with:
           type: 'zip'
-          directory: target/Release
+          directory: target/release
           path: ${{ matrix.path }}
-          file_name: jvm-${{ github.ref_name }}-${{ matrix.build }}.zip
+          filename: jvm-${{ github.ref_name }}-${{ matrix.build }}.zip
       - name: Create Release
         uses: ncipollo/release-action@v1.18.0
         with:
