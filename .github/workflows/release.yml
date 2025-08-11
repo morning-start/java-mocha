@@ -4,35 +4,45 @@ on:
   push:
     tags:
       - 'v*'
+
+permissions:  # 添加权限设置
+    contents: write  # 允许读写仓库内容   
+
 jobs:
-  release:
-    permissions:  # 添加权限设置
-        contents: write  # 允许读写仓库内容    
-    runs-on: ${{ matrix.os }}
-    strategy:
-      # matrix上下文，包含在工作流中定义的应用于当前作业的矩阵属性
-      matrix:
-        # 你可以添加更多你想要的构建平台
-        include:
-          - build: linux
-            os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-            path: jvm
-          - build: macos
-            os: macos-latest
-            target: x86_64-apple-darwin
-            path: jvm
-          - build: win-gnu
-            os: windows-latest
-            target: x86_64-pc-windows-msvc
-            path: jvm.exe
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Build Rust
-        uses: taiki-e/upload-rust-binary-action@v1.27.0
-        with:
+  create-release:  
+    runs-on: ubuntu-latest  
+    steps:  
+      - uses: actions/checkout@v4  
+      - uses: taiki-e/create-gh-release-action@v1  
+        with:  
+          # (required) GitHub token for creating GitHub Releases.  
+          token: ${{ secrets.GITHUB_TOKEN }}  
+  upload-assets:  
+    needs: create-release  
+    strategy:  
+      matrix:  
+        include:  
+          - target: aarch64-unknown-linux-gnu  
+            os: ubuntu-latest  
+          - target: aarch64-apple-darwin  
+            os: macos-latest  
+          - target: x86_64-unknown-linux-gnu  
+            os: ubuntu-latest  
+          - target: x86_64-apple-darwin  
+            os: macos-latest  
+          - target: universal-apple-darwin  
+            os: macos-latest  
+          - target: x86_64-pc-windows-msvc  
+            os: windows-latest  
+    runs-on: ${{ matrix.os }}  
+    steps:  
+      - uses: actions/checkout@v4  
+      - uses: taiki-e/upload-rust-binary-action@v1  
+        with:  
+          # (required) Comma-separated list of binary names (non-extension portion of filename) to build and upload.  
+          # Note that glob pattern is not supported yet.          bin: nping  
+          bin: jvm
+          # (optional) Target triple, default is host triple.  
+          target: ${{ matrix.target }}  
+          # (required) GitHub token for uploading assets to GitHub Releases.  
           token: ${{ secrets.GITHUB_TOKEN }}
-          target: ${{ matrix.target }}
-          tar: unix
-          zip: windows
