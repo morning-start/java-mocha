@@ -6,6 +6,7 @@ use jvm::func::{
     config::{Config, init_config},
     install::full_install_process,
     list::{list_local_jdk, list_publish_version, list_publisher, list_version},
+    local::{read_local_version, set_local_version},
     query::{query_info, query_info_term, query_info_version},
     switch::switch_jdk,
     sync::sync_data,
@@ -97,6 +98,13 @@ enum Commands {
     Uninstall {
         /// The JDK version format as publisher@version e.g. oracle@11
         jdk: String,
+    },
+    /// Set project-specific Java version.
+    #[clap(name = "local", alias = "proj")]
+    Local {
+        /// The JDK version format as publisher@version e.g. oracle@11
+        /// If not provided, shows the current project version
+        jdk: Option<String>,
     },
 }
 
@@ -245,6 +253,26 @@ async fn main() {
                     println!("JDK {} uninstalled successfully.", jdk);
                 } else {
                     eprintln!("JDK {} not found.", jdk);
+                }
+            }
+            Err(e) => eprintln!("Error: {}", e),
+        },
+        Commands::Local { jdk } => match Config::load() {
+            Ok(cfg) => {
+                if let Some(version) = jdk {
+                    // 设置项目级版本
+                    match set_local_version(&version) {
+                        Ok(_) => println!("Project Java version set to {}.", version),
+                        Err(e) => eprintln!("Error setting local version: {}", e),
+                    }
+                } else {
+                    // 显示当前项目级版本
+                    let current_dir = std::env::current_dir().unwrap();
+                    if let Some(local_version) = read_local_version(&current_dir) {
+                        println!("Current project Java version: {}", local_version);
+                    } else {
+                        println!("No project Java version set.");
+                    }
                 }
             }
             Err(e) => eprintln!("Error: {}", e),

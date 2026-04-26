@@ -32,6 +32,10 @@ pub struct PackageInfo {
     /// 校验和类型（如 sha256）
     #[serde(rename = "checksum_type")]
     pub checksum_type: String,
+
+    /// 文件大小（可选）
+    #[serde(rename = "file_size")]
+    pub file_size: Option<u64>,
 }
 impl PackageInfo {
     /// 获取校验和类型

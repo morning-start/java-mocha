@@ -1,7 +1,7 @@
 use flate2::read::GzDecoder;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use reqwest::ClientBuilder;
-use ring::digest::{Context, SHA256};
+use ring::digest;
 use serde_json::Value;
 use std::fs::{File, read_dir, read_to_string, remove_dir, remove_dir_all, remove_file, rename};
 use std::io::{self, Read, Write};
@@ -65,7 +65,7 @@ pub async fn download_package(
     uri: &str,
     file_path: &Path,
     proxy_url: Option<&str>,
-) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<u64, Box<dyn std::error::Error + Send + Sync>> {
     let client = build_client(proxy_url)?;
 
     let response = client.get(uri).send().await?;
@@ -108,14 +108,14 @@ pub async fn download_package(
     file.flush().await?;
     pb.finish_with_message("✓");
 
-    Ok(())
+    Ok(downloaded)
 }
 
 /// 计算文件的 SHA-256 哈希，返回十六进制字符串
 pub fn sha256sum<P: AsRef<Path>>(file_path: P) -> io::Result<String> {
     let path = file_path.as_ref();
     let mut file = File::open(path)?;
-    let mut context = Context::new(&SHA256);
+    let mut context = digest::Context::new(&digest::SHA256);
     let mut buffer = [0u8; 4096];
 
     loop {
@@ -132,6 +132,62 @@ pub fn sha256sum<P: AsRef<Path>>(file_path: P) -> io::Result<String> {
         .iter()
         .map(|b| format!("{:02x}", b))
         .collect())
+}
+
+/// 计算文件的校验和，支持多种校验和类型，返回十六进制字符串
+pub fn checksum<P: AsRef<Path>>(file_path: P, checksum_type: &str) -> io::Result<String> {
+    let path = file_path.as_ref();
+    let mut file = File::open(path)?;
+    let mut buffer = [0u8; 4096];
+
+    match checksum_type.to_lowercase().as_str() {
+        "md5" => {
+            use md5::compute;
+            let mut content = Vec::new();
+            file.read_to_end(&mut content)?;
+            let result = compute(&content);
+            Ok(format!("{:x}", result))
+        }
+        "sha1" => {
+            use sha1::Sha1;
+            use sha1::Digest;
+            let mut hasher = Sha1::new();
+            loop {
+                let n = file.read(&mut buffer)?;
+                if n == 0 {
+                    break;
+                }
+                hasher.update(&buffer[..n]);
+            }
+            let result = hasher.finalize();
+            Ok(format!("{:x}", result))
+        }
+        "sha256" => {
+            let mut context = digest::Context::new(&digest::SHA256);
+            loop {
+                let n = file.read(&mut buffer)?;
+                if n == 0 {
+                    break;
+                }
+                context.update(&buffer[..n]);
+            }
+            let digest = context.finish();
+            Ok(digest.as_ref().iter().map(|b| format!("{:02x}", b)).collect())
+        }
+        "sha512" => {
+            let mut context = digest::Context::new(&digest::SHA512);
+            loop {
+                let n = file.read(&mut buffer)?;
+                if n == 0 {
+                    break;
+                }
+                context.update(&buffer[..n]);
+            }
+            let digest = context.finish();
+            Ok(digest.as_ref().iter().map(|b| format!("{:02x}", b)).collect())
+        }
+        _ => Err(io::Error::new(io::ErrorKind::InvalidInput, "Unsupported checksum type")),
+    }
 }
 
 pub fn save_json(json: &Value, file_path: &Path) -> Result<(), Box<dyn std::error::Error>> {

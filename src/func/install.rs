@@ -2,7 +2,7 @@ use crate::core::datatype::{DataFile, PackageInfo};
 use crate::core::handler::DocumentHandler;
 use crate::core::utils::{
     build_client, download_package, extract_tar_gz, extract_zip, move_and_clean_subfolder,
-    sha256sum,
+    checksum,
 };
 use crate::func::config::Config;
 use indicatif::{ProgressBar, ProgressStyle};
@@ -192,22 +192,18 @@ pub async fn get_checksum(
 ///
 /// # Arguments
 /// * `download_file_path` - 下载文件的路径
-/// * `checksum` - 校验和
+/// * `expected_checksum` - 期望的校验和
 /// * `checksum_type` - 校验和类型
 ///
 /// # Returns
 /// * `Result<bool, Box<dyn std::error::Error>>` - 如果校验和匹配则返回true，否则返回false
 pub async fn check_pack(
     download_file_path: &Path,
-    checksum: &str,
+    expected_checksum: &str,
     checksum_type: &str,
 ) -> Result<bool, Box<dyn std::error::Error>> {
-    if checksum_type == "sha256" {
-        let checksum_ = sha256sum(download_file_path)?;
-        Ok(checksum == checksum_)
-    } else {
-        Err("Unsupported checksum type".into())
-    }
+    let actual_checksum = checksum(download_file_path, checksum_type)?;
+    Ok(expected_checksum == &actual_checksum)
 }
 
 /// 解压缩JDK文件
@@ -257,11 +253,18 @@ pub async fn download_cache(
     }
 
     // 下载文件
-    if download_package(&info.direct_download_uri, &file_path, proxy)
-        .await
-        .is_err()
-    {
-        return None;
+    let downloaded_size = match download_package(&info.direct_download_uri, &file_path, proxy).await {
+        Ok(size) => size,
+        Err(_) => return None,
+    };
+
+    // 文件大小验证
+    if let Some(expected_size) = info.file_size {
+        if downloaded_size != expected_size {
+            // 文件大小不匹配，删除文件
+            let _ = std::fs::remove_file(&file_path);
+            return None;
+        }
     }
 
     // 校验和验证
@@ -322,6 +325,7 @@ pub async fn full_install_process(
         checksum_uri: val2str(&info_value, "checksum_uri"),
         checksum: val2str(&info_value, "checksum"),
         checksum_type: val2str(&info_value, "checksum_type"),
+        file_size: info_value.get("file_size").and_then(|v| v.as_u64()),
     };
 
     // 获取校验和信息

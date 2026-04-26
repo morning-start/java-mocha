@@ -22,3 +22,5 @@ flate2 = { version = "1.0.35", features = ["zlib"] }
 tabled = "0.20.0"
 console = "0.16.0"
 colored = "3.0.0"
+md5 = "0.7.0"
+sha1 = "0.10.6"
