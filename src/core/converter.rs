@@ -4,19 +4,20 @@ use crate::core::utils::UrlParams;
 use std::str::FromStr;
 
 pub trait InputConverter<T> {
-    fn convert(input: T) -> Result<JdkRequest, Box<dyn std::error::Error + Send + Sync>>;
+    fn convert(input: T) -> Result<JdkRequest, String>;
 }
 
 pub struct CliInputConverter;
 
 impl InputConverter<String> for CliInputConverter {
-    fn convert(input: String) -> Result<JdkRequest, Box<dyn std::error::Error + Send + Sync>> {
+    fn convert(input: String) -> Result<JdkRequest, String> {
         let parts: Vec<&str> = input.split('@').collect();
         if parts.len() != 2 {
-            return Err("Invalid jdk format. Expected: distribution@version".into());
+            return Err("Invalid jdk format. Expected: distribution@version".to_string());
         }
 
-        let distribution = Distribution::from_str(parts[0])?;
+        let distribution = Distribution::from_str(parts[0])
+            .map_err(|e| format!("Failed to parse distribution: {}", e))?;
         let version_spec = parse_version_spec(parts[1])?;
 
         Ok(JdkRequest {
@@ -36,13 +37,14 @@ pub struct CustomInputConverter {
 }
 
 impl CustomInputConverter {
-    pub fn convert(self, input: String) -> Result<JdkRequest, Box<dyn std::error::Error + Send + Sync>> {
+    pub fn convert(self, input: String) -> Result<JdkRequest, String> {
         let parts: Vec<&str> = input.split('@').collect();
         if parts.len() != 2 {
-            return Err("Invalid jdk format. Expected: distribution@version".into());
+            return Err("Invalid jdk format. Expected: distribution@version".to_string());
         }
 
-        let distribution = Distribution::from_str(parts[0])?;
+        let distribution = Distribution::from_str(parts[0])
+            .map_err(|e| format!("Failed to parse distribution: {}", e))?;
         let version_spec = parse_version_spec(parts[1])?;
 
         Ok(JdkRequest {
@@ -55,14 +57,16 @@ impl CustomInputConverter {
     }
 }
 
-fn parse_version_spec(version: &str) -> Result<VersionSpec, Box<dyn std::error::Error + Send + Sync>> {
+fn parse_version_spec(version: &str) -> Result<VersionSpec, String> {
     match version.to_lowercase().as_str() {
         "latest" => Ok(VersionSpec::Latest),
         "lts" => Ok(VersionSpec::LTS),
         "sts" => Ok(VersionSpec::STS),
         "mts" => Ok(VersionSpec::MTS),
         "ea" => Ok(VersionSpec::EA),
-        v if v.chars().all(char::is_numeric) => Ok(VersionSpec::Major(v.parse()?)),
+        v if v.chars().all(char::is_numeric) => {
+            Ok(VersionSpec::Major(v.parse().map_err(|e| format!("Failed to parse major version: {}", e))?))
+        },
         v => Ok(VersionSpec::Exact(v.to_string())),
     }
 }

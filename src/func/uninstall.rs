@@ -3,17 +3,13 @@ use std::fs::{remove_dir_all, remove_file};
 use crate::func::config::Config;
 
 pub fn uninstall_jdk(jdk: &str, cfg: &Config) -> bool {
-    match CliInputConverter::convert(jdk.to_string()) {
-        Ok(parsed) => {
-            let jdk_version = format!("{}@{}", parsed.distribution.as_ref(), format_version(&parsed.version_spec));
-            let jdk_path = cfg.jdk_home.join(&jdk_version);
-            perform_uninstall(&jdk_path)
-        }
-        Err(_) => {
-            let jdk_path = cfg.jdk_home.join(jdk);
-            perform_uninstall(&jdk_path)
-        }
-    }
+    let jdk_version = match CliInputConverter::convert(jdk.to_string()) {
+        Ok(parsed) => format!("{}@{}", parsed.distribution.as_ref(), format_version(&parsed.version_spec)),
+        Err(_) => jdk.to_string()
+    };
+    
+    let jdk_path = cfg.jdk_home.join(&jdk_version);
+    perform_uninstall(&jdk_path)
 }
 
 fn perform_uninstall(jdk_path: &std::path::Path) -> bool {

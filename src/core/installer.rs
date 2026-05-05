@@ -55,7 +55,7 @@ impl JdkInstaller {
 
             (_, OperationEvent::Fail(err)) => OperationState::Failed(err),
 
-            _ => return Err("Invalid state transition".into()),
+            _ => return Err("Invalid state transition".to_string()),
         };
 
         Ok(())
@@ -77,7 +77,7 @@ impl JdkInstaller {
         if let OperationState::Installed(version) = &self.state {
             Ok(version.clone())
         } else {
-            Err("Installation failed".into())
+            Err("Installation failed".to_string())
         }
     }
 
@@ -90,7 +90,7 @@ impl JdkInstaller {
             Some(request.target_os),
             None, Some(request.pkg_type),
             None, None, None, None
-        ).await?;
+        ).await.map_err(|e| format!("Failed to search packages: {}", e))?;
 
         parse_package_info(&result, Some(&self.config.proxy)).await
     }
@@ -104,7 +104,7 @@ impl JdkInstaller {
 
         download_package(&info.direct_download_uri, &file_path, Some(&self.config.proxy))
             .await
-            .map_err(|e| Box::new(e))?;
+            .map_err(|e| format!("Failed to download package: {}", e))?;
 
         Ok(file_path)
     }
@@ -118,13 +118,13 @@ impl JdkInstaller {
             if !info.checksum.is_empty() && !info.checksum_type.is_empty() {
                 if info.checksum_type == "sha256" {
                     let calculated = sha256sum(&path)
-                        .map_err(|e| Box::new(e))?;
+                        .map_err(|e| format!("Failed to calculate checksum: {}", e))?;
                     if calculated != info.checksum {
                         let _ = std::fs::remove_file(&path);
-                        return Err("Checksum verification failed".into());
+                        return Err("Checksum verification failed".to_string());
                     }
                 } else {
-                    return Err("Unsupported checksum type".into());
+                    return Err(format!("Unsupported checksum type: {}", info.checksum_type));
                 }
             }
         }
@@ -139,21 +139,21 @@ impl JdkInstaller {
             
             let jdk_target_path = self.config.jdk_home.join(&jdk_version);
             std::fs::create_dir_all(&jdk_target_path)
-                .map_err(|e| Box::new(e))?;
+                .map_err(|e| format!("Failed to create directory: {}", e))?;
 
             if path.extension().and_then(|ext| ext.to_str()) == Some("zip") {
                 extract_zip(&path, &jdk_target_path)
-                    .map_err(|e| Box::<dyn std::error::Error + Send + Sync>::from(e))?;
+                    .map_err(|e| format!("Failed to extract zip: {}", e))?;
             } else {
                 extract_tar_gz(&path, &jdk_target_path)
-                    .map_err(|e| Box::<dyn std::error::Error + Send + Sync>::from(e))?;
+                    .map_err(|e| format!("Failed to extract tar.gz: {}", e))?;
             }
 
             move_and_clean_subfolder(&jdk_target_path)
-                .map_err(|e| Box::<dyn std::error::Error + Send + Sync>::from(e))?;
+                .map_err(|e| format!("Failed to clean up directory: {}", e))?;
             Ok(jdk_version)
         } else {
-            Err("Cannot install without resolved package info".into())
+            Err("Cannot install without resolved package info".to_string())
         }
     }
 }
@@ -161,16 +161,22 @@ impl JdkInstaller {
 async fn parse_package_info(result: &Value, proxy: Option<&str>) -> OperationResult<PackageInfo> {
     if let Some(array) = result.as_array() {
         if let Some(first) = array.first() {
-            let obj = first.as_object().ok_or("Result is not an object")?;
+            let obj = first.as_object().ok_or("Result is not an object".to_string())?;
             
             let links = obj.get("links").and_then(|l| l.as_object())
-                .ok_or("Missing links field")?;
+                .ok_or("Missing links field".to_string())?;
             let pkg_info_uri = links.get("pkg_info_uri").and_then(|u| u.as_str())
-                .ok_or("Missing pkg_info_uri")?;
+                .ok_or("Missing pkg_info_uri".to_string())?;
             
             let client = crate::core::utils::build_client(proxy)
-                .map_err(|e| Box::<dyn std::error::Error + Send + Sync>::from(e))?;
-            let response = client.get(pkg_info_uri).send().await?.json::<Value>().await?;
+                .map_err(|e| format!("Failed to build client: {}", e))?;
+            let response = client.get(pkg_info_uri)
+                .send()
+                .await
+                .map_err(|e| format!("Failed to send request: {}", e))?
+                .json::<Value>()
+                .await
+                .map_err(|e| format!("Failed to parse response: {}", e))?;
 
             if let Some(result) = response.get("result").and_then(|r| r.as_array()) {
                 if let Some(info) = result.first() {
@@ -188,7 +194,7 @@ async fn parse_package_info(result: &Value, proxy: Option<&str>) -> OperationRes
         }
     }
     
-    Err("Failed to parse package info".into())
+    Err("Failed to parse package info".to_string())
 }
 
 fn val2str(val: &Value, key: &str) -> String {

@@ -3,7 +3,7 @@ use crate::core::utils::link;
 use crate::func::config::Config;
 use std::fs;
 
-pub fn switch_jdk(jdk: &str, cfg: &Config) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
+pub fn switch_jdk(jdk: &str, cfg: &Config) -> Result<bool, String> {
     let parsed = CliInputConverter::convert(jdk.to_string())?;
     let jdk_version = format!("{}@{}", parsed.distribution.as_ref(), format_version(&parsed.version_spec));
     
@@ -25,17 +25,17 @@ pub fn switch_jdk(jdk: &str, cfg: &Config) -> Result<bool, Box<dyn std::error::E
             if e.kind() == std::io::ErrorKind::PermissionDenied {
                 eprintln!("Remove existing path failed: {}。Please check permissions.", e);
             }
-            e
+            format!("Failed to remove existing path: {}", e)
         })?;
     }
 
     if let Err(e) = link(&jdk_path, java_home) {
         eprintln!("Create link failed: {}", e);
-        return Err(Box::new(e));
+        return Err(format!("Failed to create link: {}", e));
     }
 
     let new_cfg = cfg.change_jdk(&jdk_version);
-    new_cfg.save()?;
+    new_cfg.save().map_err(|e| format!("Failed to save config: {}", e))?;
 
     Ok(true)
 }
