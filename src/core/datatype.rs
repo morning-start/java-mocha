@@ -157,6 +157,58 @@ pub enum Distribution {
     ZULU,
 }
 
+impl Distribution {
+    pub fn all() -> &'static [Self] {
+        &[
+            Self::AOJ,
+            Self::AojOpenj9,
+            Self::BISHENG,
+            Self::CORRETTO,
+            Self::DRAGONWELL,
+            Self::GraalvmCe8,
+            Self::GraalvmCe11,
+            Self::GraalvmCe16,
+            Self::GraalvmCe17,
+            Self::GraalvmCe19,
+            Self::GraalvmCe20,
+            Self::GraalvmCommunity,
+            Self::GRAALVM,
+            Self::JETBRAINS,
+            Self::KONA,
+            Self::LIBERICA,
+            Self::LibericaNative,
+            Self::MANDREL,
+            Self::MICROSOFT,
+            Self::OjdkBuild,
+            Self::OPENLOGIC,
+            Self::OracleOpenJdk,
+            Self::ORACLE,
+            Self::REDHAT,
+            Self::SapMachine,
+            Self::SEMERU,
+            Self::SemeruCertified,
+            Self::TEMURIN,
+            Self::TRAVA,
+            Self::ZuluPrime,
+            Self::ZULU,
+        ]
+    }
+}
+
+impl FromStr for Distribution {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let s = s.to_lowercase();
+        for dist in Self::all() {
+            if dist.as_ref() == s {
+                return Ok(*dist);
+            }
+        }
+        Err(format!("Unknown distribution: {}", s))
+    }
+}
+
 // ANCHOR VersionType
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Display, AsRefStr)]
 pub enum VersionType {
